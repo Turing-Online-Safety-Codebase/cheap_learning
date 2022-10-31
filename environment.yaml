@@ -1,0 +1,23 @@
+name: cheap_learning
+channels:
+  - conda-forge
+  - defaults
+
+dependencies:
+  - python=3.11
+  - pip=22.3
+  - pip:
+    # ML
+    - transformers
+    - torch
+
+  # Core python
+  - numpy
+  - tqdm
+  - pandas
+  - ipykernel
+  
+  # Plotting
+  - matplotlib
+  - plotly
+  - seaborn
