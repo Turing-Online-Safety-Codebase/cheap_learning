@@ -10,7 +10,8 @@ dependencies:
     # ML
     - transformers
     - torch
-
+    - openprompt
+    
   # Core python
   - numpy
   - tqdm
