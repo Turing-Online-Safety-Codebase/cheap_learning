@@ -12,7 +12,6 @@ Repo for Turing Online Safety Team Cheap Learning project
 │   ├── weak supervision script
 │   └── prompt engineering script     
 ├── data                   
-│   ├── dataset
 │   ├── samples/
 │   │   └── csv per X size sample?
 │   ├── results (all contents on gitignore)
