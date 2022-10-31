@@ -15,9 +15,10 @@ Repo for Turing Online Safety Team Cheap Learning project
 │   ├── dataset
 │   ├── samples/
 │   │   └── csv per X size sample?
-│   ├── results/
+│   ├── results (all contents on gitignore)
 │   │   └── results/predictions per experiment
 ├── environment.yaml
+├── .gitignore
 └── README.md
 
 ```
