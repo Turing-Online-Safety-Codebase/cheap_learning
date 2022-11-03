@@ -8,9 +8,9 @@ dependencies:
   - pip=22.3
   - pip:
     # ML
-    - transformers
-    - torch
-    - openprompt
+    # - transformers
+    # - torch
+    # - openprompt
     - pygithub
     
   # Core python

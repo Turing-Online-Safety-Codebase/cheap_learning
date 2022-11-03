@@ -5,3 +5,6 @@ __pycache__/
 **/__pycache__
 .vscode/
 data/results/*
+src/test.ipynb
+environment.yaml
+src/filename.txt
