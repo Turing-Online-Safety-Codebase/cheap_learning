@@ -12,6 +12,7 @@ dependencies:
     - torch
     - openprompt
     - pygithub
+    - scikit-learn
     
   # Core python
   - numpy
