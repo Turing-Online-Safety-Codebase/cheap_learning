@@ -2,18 +2,15 @@ name: cheap_learning
 channels:
   - conda-forge
   - defaults
-  # - pytorch
-  # - huggingface
 
 dependencies:
   - python=3.8
   - pip=22.3
 
   - pip:
-    # ML
-    # - transformers
-    # - torch
-    # - openprompt
+    - torch
+    - transformers
+    - openprompt
     - pygithub
     
   # Core python
