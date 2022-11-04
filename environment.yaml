@@ -2,10 +2,13 @@ name: cheap_learning
 channels:
   - conda-forge
   - defaults
+  # - pytorch
+  # - huggingface
 
 dependencies:
-  - python=3.11
+  - python=3.8
   - pip=22.3
+
   - pip:
     # ML
     # - transformers
@@ -18,6 +21,10 @@ dependencies:
   - tqdm
   - pandas
   - ipykernel
+  - requests
+
+  # ML
+  - scikit-learn
   
   # Plotting
   - matplotlib
