@@ -9,9 +9,10 @@ dependencies:
 
   - pip:
     - torch
-    - transformers
+    - transformers[sentence_piece]
     - openprompt
     - pygithub
+    - pylint
     
   # Core python
   - numpy
