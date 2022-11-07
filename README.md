@@ -2,6 +2,7 @@
 
 Repo for Turing Online Safety Team Cheap Learning project
 
+Dataset: [Hate speech dataset from a white supremacist forum - Vicomtech](https://github.com/Vicomtech/hate-speech-dataset)
 ```
 .
 ├── src
