@@ -2,6 +2,8 @@
 
 Repo for Turing Online Safety Team Cheap Learning project
 
+Dataset: [Wikipedia Detox](https://github.com/ewulczyn/wiki-detox)
+
 ```
 .
 ├── src
