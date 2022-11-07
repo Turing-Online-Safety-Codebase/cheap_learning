@@ -13,6 +13,7 @@ dependencies:
     - openprompt
     - pygithub
     - pylint
+    - emoji-2.2.0
     
   # Core python
   - numpy
