@@ -21,3 +21,12 @@ Repo for Turing Online Safety Team Cheap Learning project
 └── README.md
 
 ```
+
+### Creating Environment
+
+Step 1: Locate local github folder `cd $PATH$` e.g. `Documents/Local_Github/cheap_learning`
+
+Step 2: Create conda environment `conda env create -f environment.yaml`
+
+
+
