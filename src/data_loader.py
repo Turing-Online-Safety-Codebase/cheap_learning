@@ -34,20 +34,6 @@ def download_file(download_url, data_dir, task, file_name, sep = '\t', index_col
     read_df = pd.read_csv(f'{save_dir}/{file_name}', sep = sep, index_col = index_col)
     return read_df
 
-def load_n_samples(data_dir, task, split, n_entries):
-    """Loads first n entries of dataset split.
-
-    Args:
-        data_dir (str): Directory with data.
-        task (str): Task name e.g. abuse
-        split (str): Split from [train, test, dev] to be sampled from.
-        n_entries (int): Number of entries to sample.
-
-    Returns:
-        pd.DataFrame: Dataset of n rows.
-    """
-    df = pd.read_csv(f'{data_dir}/{task}/clean_data/{task}_{split}.csv', nrows = n_entries)
-    return df
 
 
 
