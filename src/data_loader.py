@@ -12,7 +12,7 @@ import urllib.request
 import pandas as pd
 from sklearn.utils import shuffle
 from helper_functions import check_dir_exists
-from cleaning_functions import clean_text
+from cleaning_functions import clean_text, drop_nans
 
 def download_file(download_url, data_dir, task, file_name, sep = '\t', index_col=None):
     """Loads dataframe from URL download.
@@ -66,6 +66,8 @@ def main():
     df = df.rename(columns = {'comment': 'text'})
     # clean text
     df['text'] = df['text'].apply(clean_text)
+    # remove NANs in place
+    df = drop_nans(df, subset_col = 'text')
     # save main df
     save_dir = f'{data_dir}/{task}/clean_data'
     check_dir_exists(save_dir)
