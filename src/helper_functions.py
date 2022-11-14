@@ -35,3 +35,20 @@ def load_n_samples(data_dir, task, split, n_entries):
     """
     df = pd.read_csv(f'{data_dir}/{task}/clean_data/{task}_{split}.csv', nrows = n_entries)
     return df
+
+def convert_labels(df):
+    """Converts string or boolean labels to integers.
+
+    Args:
+        df (pd.Dataframe): Input dataframe.
+
+    Returns:
+        pd.DataFrame: Output dataframe with label columns.
+        int: Number of unique classes.
+    """
+    # Save label_str value
+    df['label_str'] = df['label']
+    # Replace label column with int values
+    df['label'] = pd.Categorical(df['label_str']).codes
+    n_classes = len(df['label'].unique())
+    return df, n_classes
