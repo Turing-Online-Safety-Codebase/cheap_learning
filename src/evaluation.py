@@ -20,7 +20,7 @@ from sklearn.metrics import (
 # result = evaluate(y_true, y_pred)
 # print(result)
 
-def evaluate(true, pred, target_names=["hateful", "not_hateful"]):
+def evaluate(true, pred, target_names=["not_hateful", "hateful"]):
     """Computes the number of votes received for each class labelled for an entry.
         Three classes are included: disagree, agree, other.
     Args:
@@ -46,7 +46,7 @@ def evaluate(true, pred, target_names=["hateful", "not_hateful"]):
 def get_results_dict(task, technique, model_name, runtime,
                       test_true, test_pred,
                       dev_true, dev_pred,
-                      n_train, n_dev, n_test, datetime_str):
+                      n_train, n_dev, n_test, datetime_str, template=''):
     """Standardizes results dictionary.
 
     Args:
@@ -79,6 +79,8 @@ def get_results_dict(task, technique, model_name, runtime,
     results_dict['test_pred'] = test_pred.tolist()
     results_dict['dev_true'] = dev_true.tolist()
     results_dict['dev_pred'] = dev_pred.tolist()
+    if task == 'promting':
+        results_dict['template'] = template
     return results_dict
 
 
