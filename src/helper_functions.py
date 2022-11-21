@@ -7,6 +7,7 @@ Helper functions used across scripts.
 
 import os
 import pandas as pd
+from sklearn.utils import shuffle
 
 def check_dir_exists(path):
     """Checks if folder directory already exists, else makes directory.
@@ -35,6 +36,26 @@ def load_n_samples(data_dir, task, split, n_entries):
     """
     df = pd.read_csv(f'{data_dir}/{task}/clean_data/{task}_{split}.csv', nrows = n_entries)
     return df
+
+def load_balanced_n_samples(data_dir, task, split, n_entries):
+    """Loads balanced first n entries of training dataset split across 2 classes.
+
+    Args:
+        data_dir (str): Directory with data.
+        task (str): Task name e.g. abuse
+        split (str): Split from [train, test, dev] to be sampled from.
+        n_entries (int): Number of entries to sample in total.
+    Returns:
+        pd.DataFrame: Dataset of n rows.
+    """
+    SEED = 123
+    balanced_n = int(n_entries/2)
+    df = pd.read_csv(f'{data_dir}/{task}/clean_data/{task}_{split}.csv')
+    df_hate = df[df['label'] == True].head(balanced_n)
+    df_not_hate = df[df['label'] == False].head(balanced_n)
+    df_concat = pd.concat([df_hate, df_not_hate])
+    shuffled_df = shuffle(df_concat, random_state = SEED)
+    return shuffled_df
 
 def convert_labels(df):
     """Converts string or boolean labels to integers.
