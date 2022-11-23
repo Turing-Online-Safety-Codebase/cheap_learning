@@ -5,11 +5,11 @@ channels:
 
 dependencies:
   - python=3.8
-  - pip=22.3
+  - pip=22.2
 
   - pip:
+    - transformers[sentencepiece]
     - torch
-    - transformers[sentence_piece]
     - openprompt
     - pygithub
     - pylint
