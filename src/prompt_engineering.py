@@ -21,13 +21,13 @@ from evaluation import evaluate, get_results_dict, save_results
 from helper_functions import load_n_samples, load_balanced_n_samples, convert_labels
 
 TASK = 'binary_abuse'
-TECH = 'promting'
+TECH = 'prompt_engineering'
 
 logger = logging.getLogger(__name__)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Prompt learning")
-    parser.add_argument('--n_examples', type=str, default='15,20,32,50,70,100,150,200,320,500,750', help='num of training points tested (seperated by ",", e.g., "15,20")')
+    parser.add_argument('--n_examples', type=str, default='15,20,32,50,70,100,150', help='num of training points tested (seperated by ",", e.g., "15,20")')
     parser.add_argument('--model_name', type=str, default='bert', help='name of the model')
     parser.add_argument('--model_path', type=str, default='bert-base-cased', help='path to the model')
     parser.add_argument('--use_cuda', type=bool, default=True, help='if using cuda')
@@ -44,7 +44,7 @@ def main(n_examples, template, model_name, model_path, use_cuda):
 
     # Setup logging
     logger.setLevel(logging.DEBUG)
-    handler = logging.FileHandler(f"results/prompt_engineering/{datetime_str}.log")
+    handler = logging.FileHandler(f"results/{TECH}/{datetime_str}.log")
     # format = logging.Formatter('%(asctime)s  %(name)s %(levelname)s: %(message)s')
     # handler.setFormatter(format)
     logger.addHandler(handler)
@@ -118,6 +118,7 @@ def main(n_examples, template, model_name, model_path, use_cuda):
     raw_dataset['train'], n_classes = convert_labels(raw_dataset['train'])
     raw_dataset['val'], n_classes = convert_labels(raw_dataset['val'])
     raw_dataset['test'], n_classes = convert_labels(raw_dataset['test'])
+    logger.info(f'--{num} number of training examples--\n')
     logger.info(f"--label distribution for train set--\n{raw_dataset['train']['label'].value_counts()}")
     n_dev, n_test = len(raw_dataset['val']), len(raw_dataset['test'])
 
@@ -202,7 +203,7 @@ def main(n_examples, template, model_name, model_path, use_cuda):
                     n_examples, n_dev, n_test, datetime_str, template)
     # add test_result to results_dict
     results_dict.update(test_result)
-    save_results("results", datetime_str, results_dict)
+    save_results(f"results/{TECH}", datetime_str, results_dict)
 
 if __name__ == '__main__':
     args = parse_args()
@@ -211,5 +212,4 @@ if __name__ == '__main__':
     templates = '{"placeholder":"text_a"} Is this text abusive? {"mask"}'
 
     for num in num_examples:
-        logger.info(f'--{num} number of training examples--\n')
         main(num, templates, args.model_name, args.model_path, args.use_cuda)
