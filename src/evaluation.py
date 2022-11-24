@@ -32,12 +32,12 @@ def evaluate(true, pred, target_names=["not_hateful", "hateful"]):
         and confusion metric
     """
     results = {}
-    results['accuracy'] = accuracy_score(true, pred)
-    results['precision'] = precision_score(true, pred, average='weighted', zero_division=0)
-    results['recall'] = recall_score(true, pred, average='weighted', zero_division=0)
-    results['f1'] = f1_score(true, pred, average='weighted', zero_division=0)
+    results['test_accuracy'] = accuracy_score(true, pred)
+    results['test_precision'] = precision_score(true, pred, average='weighted', zero_division=0)
+    results['test_recall'] = recall_score(true, pred, average='weighted', zero_division=0)
+    results['test_f1'] = f1_score(true, pred, average='weighted', zero_division=0)
     print(f'--confusion metric-- \n {confusion_matrix(true, pred)}')
-    results['tn, fp, fn, tp'] = confusion_matrix(true, pred, normalize='true').ravel()
+    results['test_cm (tn, fp, fn, tp)'] = confusion_matrix(true, pred, normalize='true').ravel().tolist()
     print("\n--full report--")
     print(classification_report(true, pred, output_dict=False, target_names=target_names))
     return results
@@ -79,7 +79,7 @@ def get_results_dict(task, technique, model_name, runtime,
     results_dict['test_pred'] = test_pred.tolist()
     results_dict['dev_true'] = dev_true.tolist()
     results_dict['dev_pred'] = dev_pred.tolist()
-    if task == 'promting':
+    if task == 'prompt_engineering':
         results_dict['template'] = template
     return results_dict
 
