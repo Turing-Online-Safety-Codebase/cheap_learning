@@ -13,6 +13,7 @@ from sklearn.metrics import (
     confusion_matrix,
     classification_report,
     )
+from helper_functions import check_dir_exists
 
 # # example
 # y_true = [1, 1, 0, 1]
@@ -92,5 +93,6 @@ def save_results(output_dir, datetime_str, results_dict):
         datetime_str (str): Current datetime for filename.
         results_dict (dict): Dictionary of results
     """
+    check_dir_exists(output_dir)
     with open(f'{output_dir}/{datetime_str}.json', 'w', encoding="utf-8") as file:
         json.dump(results_dict, file)
