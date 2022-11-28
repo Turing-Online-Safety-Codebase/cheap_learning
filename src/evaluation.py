@@ -47,7 +47,7 @@ def evaluate(true, pred, target_names=["not_hateful", "hateful"]):
 def get_results_dict(task, technique, model_name, runtime,
                       test_true, test_pred,
                       dev_true, dev_pred,
-                      n_train, n_dev, n_test, datetime_str, template=''):
+                      n_train, n_dev, n_test, balanced_train, datetime_str, template=''):
     """Standardizes results dictionary.
 
     Args:
@@ -62,7 +62,9 @@ def get_results_dict(task, technique, model_name, runtime,
         n_train (int): Number of training entries.
         n_dev (int): Number of dev entries.
         n_test (int): Number of test entries.
+        balanced_train (bool): Whether training data is balanced by class label.
         datetime_str (str): Current datetime.
+        template(str) (optional): prompt template.
 
     Returns:
         dict: Dictionary of results.
@@ -75,6 +77,7 @@ def get_results_dict(task, technique, model_name, runtime,
     results_dict['n_train'] = n_train
     results_dict['n_dev'] = n_dev
     results_dict['n_test'] = n_test
+    results_dict['balanced_train'] = balanced_train
     results_dict['datetime'] = datetime_str
     results_dict['test_true'] = test_true.tolist()
     results_dict['test_pred'] = test_pred.tolist()
