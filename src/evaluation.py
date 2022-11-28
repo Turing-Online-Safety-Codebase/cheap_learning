@@ -103,7 +103,7 @@ def get_results_dict(task, technique, model_name, runtime,
     results_dict['dev_true'] = dev_true.tolist()
     results_dict['dev_pred'] = dev_pred.tolist()
     results_dict['seed'] = seed
-    if task == 'prompt_engineering':
+    if technique == 'prompt_engineering':
         results_dict['template'] = template
     return results_dict
 
