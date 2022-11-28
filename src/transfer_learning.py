@@ -50,7 +50,7 @@ def get_runtime(train_output):
     metrics = train_output.metrics
     return metrics['train_runtime']
 
-def main(TASK, TECH, data_dir, output_dir, n_train, balanced_train, n_test, n_dev, model_name):
+def main(SEED, TASK, TECH, data_dir, output_dir, n_train, balanced_train, n_test, n_dev, model_name):
     datetime_str = str(datetime.now())
 
     # Setup logging
@@ -90,7 +90,7 @@ def main(TASK, TECH, data_dir, output_dir, n_train, balanced_train, n_test, n_de
     # Model Training
     logger.info("--Model Training--")
     model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=n_classes)
-    training_args = TrainingArguments(output_dir=output_dir, evaluation_strategy="epoch")
+    training_args = TrainingArguments(output_dir=output_dir, evaluation_strategy="epoch", seed=SEED)
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -108,7 +108,7 @@ def main(TASK, TECH, data_dir, output_dir, n_train, balanced_train, n_test, n_de
                                     test_true, test_pred,
                                     dev_true, dev_pred,
                                     n_train, n_dev, n_test, balanced_train,
-                                    datetime_str)
+                                    SEED, datetime_str)
     # Save output
     save_results(output_dir, datetime_str, results_dict)
 
@@ -116,7 +116,6 @@ if __name__ == '__main__':
     args = parse_args()
 
     # Set global vars
-    SEED = 123
     TECH = 'transfer_learning'
     TASK = args.task
 
@@ -126,7 +125,8 @@ if __name__ == '__main__':
     data_dir = f"{main_dir}/data"
     output_dir = f'{main_dir}/results/{TASK}/{TECH}'
 
-    # Run for multiple training batch sizes
+    # Run for multiple training batch sizes and multiple seeds
     n_train_list = args.n_train_values.split(',')
     for n_train in n_train_list:
-        main(TASK, TECH, data_dir, output_dir, n_train, args.balanced_train, args.n_test, args.n_dev, args.model_name)
+        for SEED in [1,2,3]:
+            main(SEED, TASK, TECH, data_dir, output_dir, n_train, args.balanced_train, args.n_test, args.n_dev, args.model_name)
