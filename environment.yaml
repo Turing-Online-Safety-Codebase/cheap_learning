@@ -13,6 +13,7 @@ dependencies:
 
   - pip:
     - transformers[sentencepiece]
+    - datasets
     - openprompt
     - pygithub
     - pylint
