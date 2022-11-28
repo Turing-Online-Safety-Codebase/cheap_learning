@@ -43,6 +43,24 @@ def evaluate(true, pred, target_names=["not_hateful", "hateful"]):
     print(classification_report(true, pred, output_dict=False, target_names=target_names))
     return results
 
+def evaluate_dataframe(s):
+    """Function to be applied to dataframe with prediction lists as columns. 
+    E.g. results_df[['acc', 'f1', 'prec', 'recall']] = results_df.apply(evaluate_dataframe, axis=1, result_type="expand")
+
+    Args:
+        s (pd.DataFrame): Results dataframe.
+
+    Returns:
+        float: list of floats for eval scores.
+    """
+    true = s['test_true']
+    pred = s['test_pred']
+    acc = accuracy_score(true, pred)
+    f1 = f1_score(true, pred, average='macro', zero_division=0)
+    prec = precision_score(true, pred, average='weighted', zero_division=0)
+    recall = recall_score(true, pred, average='weighted', zero_division=0)
+    return acc,f1, prec, recall
+
 
 def get_results_dict(task, technique, model_name, runtime,
                       test_true, test_pred,
