@@ -31,6 +31,7 @@ def parse_args():
     parser.add_argument('--model_name', type=str, default='bert', help='name of the model')
     parser.add_argument('--model_path', type=str, default='bert-base-cased', help='path to the model')
     parser.add_argument('--use_cuda', type=bool, default=True, help='if using cuda')
+    parser.add_argument('--balanced_train', type=bool, default=True, help='Whether training data is balanced by class label')
     parser.add_argument('--eval_steps', type=int, default='4', help='num of update steps between two evaluations')
     pars_args = parser.parse_args()
 
@@ -39,7 +40,7 @@ def parse_args():
         print(f"{arg} is {getattr(pars_args, arg)}")
     return pars_args
 
-def main(n_examples, template, model_name, model_path, use_cuda):
+def main(n_examples, template, model_name, model_path, balanced_train, use_cuda):
     datetime_str = str(datetime.datetime.now())
 
     # Setup logging
@@ -111,8 +112,11 @@ def main(n_examples, template, model_name, model_path, use_cuda):
 
     # Prepare dataset
     raw_dataset = {}
-    # raw_dataset['train'] = load_n_samples('data', 'binary_abuse', 'train', int(n))
-    raw_dataset['train'] = load_balanced_n_samples('data', 'binary_abuse', 'train', int(n_examples))
+    if balanced_train:
+        raw_dataset['train'] = load_balanced_n_samples('data', 'binary_abuse', 'train', int(n_examples))
+    else:
+        raw_dataset['train'] = load_n_samples('data', 'binary_abuse', 'train', int(n_examples))
+    
     raw_dataset['val'] = pandas.read_csv("data/binary_abuse/clean_data/binary_abuse_dev.csv")
     raw_dataset['test'] = pandas.read_csv("data/binary_abuse/clean_data/binary_abuse_test.csv")
     raw_dataset['train'], n_classes = convert_labels(raw_dataset['train'])
@@ -135,7 +139,7 @@ def main(n_examples, template, model_name, model_path, use_cuda):
         tokenizer=tokenizer,
         tokenizer_wrapper_class=WrapperClass,
         max_seq_length=256,
-        batch_size=4,
+        batch_size=128,
         shuffle=False,
         teacher_forcing=False,
         predict_eos_token=False,
@@ -147,7 +151,7 @@ def main(n_examples, template, model_name, model_path, use_cuda):
             tokenizer=tokenizer,
             tokenizer_wrapper_class=WrapperClass,
             max_seq_length=256,
-            batch_size=4,
+            batch_size=128,
             shuffle=False,
             teacher_forcing=False,
             predict_eos_token=False,
@@ -184,10 +188,10 @@ def main(n_examples, template, model_name, model_path, use_cuda):
                 optimizer.step()
                 logger.info(f"Epoch {epoch}, step {step}, average loss: {tot_loss/(step+1)}")
             logger.info("--Perform validation--")
-            val_gold_labels, val_preds, val_result = inference(promptModel, validation_dataloader)
             promptModel.train()
         end = time.time()
         run_time = end - start
+        val_gold_labels, val_preds, val_result = inference(promptModel, validation_dataloader)
     else:        
         logger.info("--Perform validation--")
         val_gold_labels, val_preds, val_result = inference(promptModel, validation_dataloader)
@@ -200,7 +204,7 @@ def main(n_examples, template, model_name, model_path, use_cuda):
     results_dict = get_results_dict(TASK, TECH, model_name, run_time,
                     test_gold_labels, test_preds,
                     val_gold_labels, val_preds,
-                    n_examples, n_dev, n_test, datetime_str, template)
+                    n_examples, n_dev, n_test, balanced_train, datetime_str, template)
     # add test_result to results_dict
     results_dict.update(test_result)
     save_results(f"results/{TECH}", datetime_str, results_dict)
@@ -212,4 +216,4 @@ if __name__ == '__main__':
     templates = '{"placeholder":"text_a"} Is this text abusive? {"mask"}'
 
     for num in num_examples:
-        main(num, templates, args.model_name, args.model_path, args.use_cuda)
+        main(num, templates, args.model_name, args.model_path, args.balanced_train, args.use_cuda)
