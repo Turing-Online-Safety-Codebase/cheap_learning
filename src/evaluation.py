@@ -65,7 +65,7 @@ def evaluate_dataframe(s):
 def get_results_dict(task, technique, model_name, runtime,
                       test_true, test_pred,
                       dev_true, dev_pred,
-                      n_train, n_dev, n_test, balanced_train, datetime_str, template=''):
+                      n_train, n_dev, n_test, balanced_train, seed, datetime_str, template=''):
     """Standardizes results dictionary.
 
     Args:
@@ -81,6 +81,7 @@ def get_results_dict(task, technique, model_name, runtime,
         n_dev (int): Number of dev entries.
         n_test (int): Number of test entries.
         balanced_train (bool): Whether training data is balanced by class label.
+        seed (int): Random seed for experiment run.
         datetime_str (str): Current datetime.
         template(str) (optional): prompt template.
 
@@ -101,6 +102,7 @@ def get_results_dict(task, technique, model_name, runtime,
     results_dict['test_pred'] = test_pred.tolist()
     results_dict['dev_true'] = dev_true.tolist()
     results_dict['dev_pred'] = dev_pred.tolist()
+    results_dict['seed'] = seed
     if task == 'prompt_engineering':
         results_dict['template'] = template
     return results_dict
