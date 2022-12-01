@@ -16,6 +16,7 @@ from openprompt.data_utils import InputExample
 from openprompt.plms import load_plm
 from openprompt.prompts import ManualTemplate, ManualVerbalizer
 from openprompt import PromptForClassification, PromptDataLoader
+from openprompt.utils.reproduciblity import set_seed
 from transformers import AdamW
 from evaluation import evaluate, get_results_dict, save_results
 from helper_functions import load_n_samples, load_balanced_n_samples, convert_labels
@@ -32,6 +33,7 @@ def parse_args():
     parser.add_argument('--model_path', type=str, default='bert-base-cased', help='path to the model')
     parser.add_argument('--use_cuda', type=bool, default=True, help='if using cuda')
     parser.add_argument('--balanced_train', type=bool, default=True, help='Whether training data is balanced by class label')
+    parser.add_argument('--output_dir', type=str, default='results', help='directory to the results')
     parser.add_argument('--eval_steps', type=int, default='4', help='num of update steps between two evaluations')
     pars_args = parser.parse_args()
 
@@ -40,12 +42,14 @@ def parse_args():
         print(f"{arg} is {getattr(pars_args, arg)}")
     return pars_args
 
-def main(n_examples, template, model_name, model_path, balanced_train, use_cuda):
+def main(n_examples, template, seed, output_dir, model_name, model_path, balanced_train, use_cuda):
     datetime_str = str(datetime.datetime.now())
+
+    set_seed(seed)
 
     # Setup logging
     logger.setLevel(logging.DEBUG)
-    handler = logging.FileHandler(f"results/{TECH}/{datetime_str}.log")
+    handler = logging.FileHandler(f"{output_dir}/{datetime_str}.log")
     # format = logging.Formatter('%(asctime)s  %(name)s %(levelname)s: %(message)s')
     # handler.setFormatter(format)
     logger.addHandler(handler)
@@ -204,16 +208,20 @@ def main(n_examples, template, model_name, model_path, balanced_train, use_cuda)
     results_dict = get_results_dict(TASK, TECH, model_name, run_time,
                     test_gold_labels, test_preds,
                     val_gold_labels, val_preds,
-                    n_examples, n_dev, n_test, balanced_train, datetime_str, template)
+                    n_examples, n_dev, n_test, balanced_train, seed, datetime_str, template)
     # add test_result to results_dict
     results_dict.update(test_result)
-    save_results(f"results/{TECH}", datetime_str, results_dict)
+    save_results(output_dir, datetime_str, results_dict)
 
 if __name__ == '__main__':
     args = parse_args()
 
     num_examples = args.n_examples.split(',')
+    # templates_list = ['{"placeholder":"text_a"} Is this text abusive? {"mask"}', 
+    #              '{"placeholder":"text_a"} Does this text contain abuse? {"mask"}',
+    #              ]
     templates = '{"placeholder":"text_a"} Is this text abusive? {"mask"}'
 
     for num in num_examples:
-        main(num, templates, args.model_name, args.model_path, args.balanced_train, args.use_cuda)
+        for SEED in [1,2,3]:
+            main(num, templates, SEED, args.output_dir, args.model_name, args.model_path, args.balanced_train, args.use_cuda)
