@@ -32,7 +32,7 @@ def parse_args():
     parser.add_argument('--model_name', type=str, default='bert', help='name of the model')
     parser.add_argument('--model_path', type=str, default='bert-base-cased', help='path to the model')
     parser.add_argument('--use_cuda', type=bool, default=True, help='if using cuda')
-    parser.add_argument('--balanced_train', type=bool, default=True, help='Whether training data is balanced by class label')
+    parser.add_argument('--balanced_train', type=bool, default=False, help='Whether training data is balanced by class label')
     parser.add_argument('--output_dir', type=str, default='results', help='directory to the results')
     parser.add_argument('--eval_steps', type=int, default='4', help='num of update steps between two evaluations')
     pars_args = parser.parse_args()
@@ -170,7 +170,7 @@ def main(n_examples, template, seed, output_dir, model_name, model_path, balance
             tokenizer=tokenizer,
             tokenizer_wrapper_class=WrapperClass,
             max_seq_length=256,
-            batch_size=4,
+            batch_size=8,
             shuffle=False,
             teacher_forcing=False,
             predict_eos_token=False,
@@ -192,7 +192,6 @@ def main(n_examples, template, seed, output_dir, model_name, model_path, balance
                 optimizer.step()
                 logger.info(f"Epoch {epoch}, step {step}, average loss: {tot_loss/(step+1)}")
             logger.info("--Perform validation--")
-            promptModel.train()
         end = time.time()
         run_time = end - start
         val_gold_labels, val_preds, val_result = inference(promptModel, validation_dataloader)
