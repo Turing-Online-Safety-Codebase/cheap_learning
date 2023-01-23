@@ -21,9 +21,6 @@ from transformers import AdamW
 from evaluation import evaluate, get_results_dict, save_results
 from helper_functions import load_n_samples, load_balanced_n_samples, convert_labels
 
-TASK = 'binary_abuse'
-TECH = 'prompt_engineering'
-
 logger = logging.getLogger(__name__)
 
 def parse_args():
@@ -32,7 +29,7 @@ def parse_args():
     parser.add_argument('--model_name', type=str, default='bert', help='name of the model')
     parser.add_argument('--model_path', type=str, default='bert-base-cased', help='path to the model')
     parser.add_argument('--use_cuda', type=bool, default=True, help='if using cuda')
-    parser.add_argument('--balanced_train', type=bool, default=False, help='Whether training data is balanced by class label')
+    parser.add_argument('--balanced_train', type=bool, action=argparse.BooleanOptionalAction, help='if training entries are balanced by class label')
     parser.add_argument('--output_dir', type=str, default='results', help='directory to the results')
     parser.add_argument('--eval_steps', type=int, default='4', help='num of update steps between two evaluations')
     pars_args = parser.parse_args()
@@ -116,10 +113,10 @@ def main(n_examples, template, seed, output_dir, model_name, model_path, balance
 
     # Prepare dataset
     raw_dataset = {}
-    if balanced_train:
-        raw_dataset['train'] = load_balanced_n_samples('data', 'binary_abuse', 'train', int(n_examples))
-    else:
+    if balanced_train is False:
         raw_dataset['train'] = load_n_samples('data', 'binary_abuse', 'train', int(n_examples))
+    else:
+        raw_dataset['train'] = load_balanced_n_samples('data', 'binary_abuse', 'train', int(n_examples))
     
     raw_dataset['val'] = pandas.read_csv("data/binary_abuse/clean_data/binary_abuse_dev.csv")
     raw_dataset['test'] = pandas.read_csv("data/binary_abuse/clean_data/binary_abuse_test.csv")
@@ -207,7 +204,7 @@ def main(n_examples, template, seed, output_dir, model_name, model_path, balance
     results_dict = get_results_dict(TASK, TECH, model_name, run_time,
                     test_gold_labels, test_preds,
                     val_gold_labels, val_preds,
-                    n_examples, n_dev, n_test, balanced_train, seed, datetime_str, template)
+                    int(n_examples), n_dev, n_test, balanced_train, seed, datetime_str, template)
     # add test_result to results_dict
     results_dict.update(test_result)
     save_results(output_dir, datetime_str, results_dict)
@@ -218,9 +215,10 @@ if __name__ == '__main__':
     num_examples = args.n_examples.split(',')
     # templates_list = ['{"placeholder":"text_a"} Is this text abusive? {"mask"}', 
     #              '{"placeholder":"text_a"} Does this text contain abuse? {"mask"}',
+    #              '{"placeholder":"text_a"} It was? {"mask"}',
     #              ]
-    templates = '{"placeholder":"text_a"} Is this text abusive? {"mask"}'
+    templates = '{"placeholder":"text_a"} It was? {"mask"}'
 
     for num in num_examples:
-        for SEED in [1,2,3]:
+        for SEED in [1, 2, 3]:
             main(num, templates, SEED, args.output_dir, args.model_name, args.model_path, args.balanced_train, args.use_cuda)
