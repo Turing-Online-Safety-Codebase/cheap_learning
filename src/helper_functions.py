@@ -34,7 +34,12 @@ def load_n_samples(data_dir, task, split, n_entries):
     Returns:
         pd.DataFrame: Dataset of n rows.
     """
-    df = pd.read_csv(f'{data_dir}/{task}/clean_data/{task}_{split}.csv', nrows = n_entries)
+    if n_entries == -1:
+        # load all entries
+        df = pd.read_csv(f'{data_dir}/{task}/clean_data/{task}_{split}.csv')
+    else:
+        # load n_entries
+        df = pd.read_csv(f'{data_dir}/{task}/clean_data/{task}_{split}.csv', nrows = n_entries)
     return df
 
 def load_balanced_n_samples(data_dir, task, split, n_entries):
