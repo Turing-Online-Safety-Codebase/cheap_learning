@@ -56,9 +56,9 @@ def load_balanced_n_samples(data_dir, task, split, n_entries):
     SEED = 123
     balanced_n = int(n_entries/2)
     df = pd.read_csv(f'{data_dir}/{task}/clean_data/{task}_{split}.csv')
-    df_hate = df[df['label'] == True].head(balanced_n)
-    df_not_hate = df[df['label'] == False].head(balanced_n)
-    df_concat = pd.concat([df_hate, df_not_hate])
+    df_pos = df[df['label'] == True].head(balanced_n)
+    df_neg = df[df['label'] == False].head(balanced_n)
+    df_concat = pd.concat([df_pos, df_neg])
     shuffled_df = shuffle(df_concat, random_state = SEED)
     return shuffled_df
 

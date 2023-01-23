@@ -21,8 +21,8 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Transfer learning")
     parser.add_argument('--n_train', type=int, default=16, help='num of training entries')
     parser.add_argument('--balanced_train', type=bool, action=argparse.BooleanOptionalAction, help='if training entries are balanced by class label')
-    parser.add_argument('--n_test', type=int, default=50, help='num of testing entries')
-    parser.add_argument('--n_dev', type=int, default=50, help='num of dev entries')
+    parser.add_argument('--eval_set', type=str, default="dev_sample", help='name of eval set')
+    parser.add_argument('--n_eval', type=int, default=-1, help='num of eval entries. Set to -1 to take all entries.')
     parser.add_argument('--model_name', type=str, default='bert', help='name of the model')
     parser.add_argument('--task', type=str, default='target task', help = 'name of task')
     pars_args = parser.parse_args()
@@ -32,9 +32,9 @@ def parse_args():
         print(f"{arg} is {getattr(pars_args, arg)}")
     return pars_args
 
-def convert_data_format(train_df, dev_df, test_df):
+def convert_data_format(train_df, eval_df):
     tf_dataset = DatasetDict()
-    for df, split in zip([train_df, dev_df, test_df], ['train', 'dev', 'test']):
+    for df, split in zip([train_df, eval_df], ['train', 'eval']):
         split_ds = Dataset.from_pandas(df[['text', 'label']])
         tf_dataset[split] = split_ds
     return tf_dataset
@@ -50,7 +50,7 @@ def get_runtime(train_output):
     metrics = train_output.metrics
     return metrics['train_runtime']
 
-def main(SEED, TASK, TECH, data_dir, output_dir, n_train, balanced_train, n_test, n_dev, model_name):
+def main(SEED, TASK, TECH, data_dir, output_dir, n_train, balanced_train, eval_set, n_eval, model_name):
     datetime_str = str(datetime.now())
 
     # Setup logging
@@ -67,17 +67,16 @@ def main(SEED, TASK, TECH, data_dir, output_dir, n_train, balanced_train, n_test
         train_df, n_classes_train = convert_labels(load_n_samples(data_dir, TASK, "train", n_train)) 
     else:
         train_df, n_classes_train = convert_labels(load_balanced_n_samples(data_dir, TASK, "train", n_train))
-    dev_df, n_classes_dev = convert_labels(load_n_samples(data_dir, TASK, "dev", n_dev))
-    test_df, n_classes_test = convert_labels(load_n_samples(data_dir, TASK, "test", n_test))
-    if n_classes_train == n_classes_dev == n_classes_test:
+    eval_df, n_classes_eval = convert_labels(load_n_samples(data_dir, TASK, eval_set, n_eval))
+    if n_classes_train == n_classes_eval:
         n_classes = n_classes_train
     else:
-        print("Error: train, test or dev have different number of classes")
-    for df, split in zip([train_df, dev_df, test_df], ['train', 'dev', 'test']):
+        print("Error: train and eval have different number of classes")
+    for df, split in zip([train_df, eval_df], ['train', 'dev', 'test']):
         logger.info(f'--{len(df)} examples in {split} set--\n')
         logger.info(f"--label distribution for {split} set--\n{df['label'].value_counts()}")
     # Convert data format
-    dataset = convert_data_format(train_df, dev_df, test_df)
+    dataset = convert_data_format(train_df, eval_df)
 
     # Tokenize
     logger.info("--Tokenization--")
@@ -89,27 +88,28 @@ def main(SEED, TASK, TECH, data_dir, output_dir, n_train, balanced_train, n_test
     # Model Training
     logger.info("--Model Training--")
     model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=n_classes)
-    training_args = TrainingArguments(output_dir=output_dir, evaluation_strategy="epoch", seed=SEED)
+    training_args = TrainingArguments(output_dir=output_dir, 
+                                    do_predict = False, do_eval = False,
+                                    seed=SEED)
     trainer = Trainer(
         model=model,
         args=training_args,
-        train_dataset=tokenized_datasets["train"],
-        eval_dataset=tokenized_datasets["test"],)
+        train_dataset=tokenized_datasets["train"])
     train_output = trainer.train()
 
     # Model Evaluation
     logger.info("--Model Evaluation--")
     runtime = get_runtime(train_output)
-    dev_pred, dev_true = get_pred_labels(trainer, tokenized_datasets, "dev")
-    test_pred, test_true = get_pred_labels(trainer, tokenized_datasets, "test")
+    eval_pred, eval_true = get_pred_labels(trainer, tokenized_datasets, "eval")
     datetime_str = datetime.now().strftime("%Y%m%d-%H%M%S")
-    results_dict = get_results_dict(TASK, TECH, model_name, runtime,
-                                    test_true, test_pred,
-                                    dev_true, dev_pred,
-                                    n_train, n_dev, n_test, balanced_train,
+    results_dict = get_results_dict(TASK, TECH, 
+                                    model_name, runtime,
+                                    eval_true, eval_pred, eval_set,
+                                    n_train, n_eval, balanced_train, 
                                     SEED, datetime_str)
     # Save output
-    save_results(output_dir, datetime_str, results_dict)
+    save_str = f'n={n_train}_bal={balanced_train}_s={SEED}'
+    save_results(output_dir, save_str, results_dict)
 
 if __name__ == '__main__':
     args = parse_args()
@@ -125,4 +125,5 @@ if __name__ == '__main__':
 
     # Run for multiple training batch sizes and multiple seeds
     for SEED in [1,2,3]:
-        main(SEED, TASK, TECH, data_dir, output_dir, args.n_train, args.balanced_train, args.n_test, args.n_dev, args.model_name)
+        print(f'RUNNING for SEED={SEED}')
+        main(SEED, TASK, TECH, data_dir, output_dir, args.n_train, args.balanced_train, args.eval_set, args.n_eval, args.model_name)
