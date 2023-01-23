@@ -15,16 +15,16 @@ logger = logging.getLogger(__name__)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Weak Supervision")
-    parser.add_argument('--n_train_values', type=str, default='15,20,32,50,70,100,150', help='str list of num of training entries (seperated by ",", e.g., "15,20")')
-    parser.add_argument('--balanced_train', type=bool, default=False, help='if training entries are balanced by class label')
-    parser.add_argument('--n_test', type=int, default=3000, help='num of testing entries')
-    parser.add_argument('--n_dev', type=int, default=1000, help='num of dev entries')
-    parser.add_argument('--model_name', type=str, default='bert', help='name of the model')
+    parser.add_argument('--n_train', type=int, default=16, help='num of training entries')
+    parser.add_argument('--n_test', type=int, default=100, help='num of testing entries. If -1 is given, then whole set is used as input')
+    parser.add_argument('--n_dev', type=int, default=100, help='num of dev entries. If -1 is given, then whole set is used as input')
+    parser.add_argument('--balanced_train', action=argparse.BooleanOptionalAction, default=False, help='if training entries are balanced by class label')
+    parser.add_argument('--dev', action=argparse.BooleanOptionalAction, default=True, help='dev split included?')
+    parser.add_argument('--model_name', type=str, default='LabelModel', help='name of the model')
     parser.add_argument('--task', type=str, help='target task')
-    parser.add_argument('--path_annotations', type=str, help='path to annotations csv')
-    parser.add_argument('--path_keywords', type=str, help='path to keywords csv')
-    parser.add_argument('--dev', type=bool, default=True, help='dev split included?')
-    parser.add_argument('--tie_break_policy', type=str, default='abstain', help='Tie break policy for predicting labels (random vs abstain)')
+    parser.add_argument('--filename_annotations', type=str, help='filename of annotations csv')
+    parser.add_argument('--filename_keywords', type=str, help='filename of keywords csv')
+    parser.add_argument('--tie_break_policy', type=str, default='random', help='Tie break policy for predicting labels (random vs abstain)')
     pars_args = parser.parse_args()
 
     print("the inputs are:")
@@ -160,6 +160,8 @@ if __name__ == '__main__':
     path = os.getcwd()
     main_dir = os.path.split(path)[0]
     data_dir = f"{main_dir}/data"
+    raw_data_dir = f"{main_dir}/data/{TASK}/raw_data/"
+    misc_data_dir = f"{main_dir}/data/{TASK}/misc/"
     output_dir = f'{main_dir}/results/{TASK}/{TECH}'
 
     if args.dev:
@@ -167,11 +169,10 @@ if __name__ == '__main__':
     else:
         splits = ['train', 'test']
 
-    # Run for multiple training batch sizes and multiple seeds
-    n_train_list = args.n_train_values.split(',')
-    for n_train in n_train_list:
-        n_train = int(n_train)
-        for SEED in [1,2,3]:
-            main(TASK, TECH, SEED, args.model_name, data_dir, output_dir, splits, 
-                 n_train, args.n_test, args.n_dev, args.balanced_train,
-                 args.path_annotations, args.path_keywords, args.tie_break_policy)
+    path_annotations = raw_data_dir + args.filename_annotations
+    path_keywords = misc_data_dir + args.filename_keywords
+    # Run for multiple seeds
+    for SEED in [1,2,3]:
+        main(TASK, TECH, SEED, args.model_name, data_dir, output_dir, splits, 
+                args.n_train, args.n_test, args.n_dev, args.balanced_train,
+                path_annotations, path_keywords, args.tie_break_policy)
