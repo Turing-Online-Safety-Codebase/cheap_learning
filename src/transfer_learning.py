@@ -19,10 +19,10 @@ logger = logging.getLogger(__name__)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Transfer learning")
-    parser.add_argument('--n_train_values', type=str, default='15,20,32,50,70,100,150', help='str list of num of training entries (seperated by ",", e.g., "15,20")')
-    parser.add_argument('--balanced_train', type=bool, default=False, help='if training entries are balanced by class label')
-    parser.add_argument('--n_test', type=int, default=-1, help='num of testing entries')
-    parser.add_argument('--n_dev', type=int, default=-1, help='num of dev entries')
+    parser.add_argument('--n_train', type=int, default=16, help='num of training entries')
+    parser.add_argument('--balanced_train', type=bool, action=argparse.BooleanOptionalAction, help='if training entries are balanced by class label')
+    parser.add_argument('--n_test', type=int, default=50, help='num of testing entries')
+    parser.add_argument('--n_dev', type=int, default=50, help='num of dev entries')
     parser.add_argument('--model_name', type=str, default='bert', help='name of the model')
     parser.add_argument('--task', type=str, default='target task', help = 'name of task')
     pars_args = parser.parse_args()
@@ -124,7 +124,5 @@ if __name__ == '__main__':
     output_dir = f'{main_dir}/results/{TASK}/{TECH}'
 
     # Run for multiple training batch sizes and multiple seeds
-    n_train_list = args.n_train_values.split(',')
-    for n_train in n_train_list:
-        for SEED in [1,2,3]:
-            main(SEED, TASK, TECH, data_dir, output_dir, int(n_train), args.balanced_train, args.n_test, args.n_dev, args.model_name)
+    for SEED in [1,2,3]:
+        main(SEED, TASK, TECH, data_dir, output_dir, args.n_train, args.balanced_train, args.n_test, args.n_dev, args.model_name)
