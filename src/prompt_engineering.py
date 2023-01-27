@@ -14,7 +14,6 @@ import datetime
 import logging
 import numpy
 from openprompt.data_utils import InputExample
-# from openprompt.plms import load_plm
 from openprompt.prompts import ManualTemplate, ManualVerbalizer
 from openprompt import PromptForClassification, PromptDataLoader
 from openprompt.utils.reproduciblity import set_seed

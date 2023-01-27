@@ -1,18 +1,24 @@
 #!/bin/bash
 
-echo "serialised training with different training size"
-# python src/prompt_engineering.py --n_examples 0
-# python src/prompt_engineering.py --n_examples 16
-# python src/prompt_engineering.py --n_examples 32
-python src/prompt_engineering.py --n_examples 64
-python src/prompt_engineering.py --n_examples 128
-python src/prompt_engineering.py --n_examples 256
-python src/prompt_engineering.py --n_examples 512
-# python src/prompt_engineering.py --n_examples 1024
-python src/prompt_engineering.py --n_examples 2048
-# python src/prompt_engineering.py --n_examples 4096
-# python src/prompt_engineering.py --n_examples 8192
-# python src/prompt_engineering.py --n_examples 16384
-# python src/prompt_engineering.py --n_examples 32768
-# python src/prompt_engineering.py --n_examples 65536
-# python src/prompt_engineering.py --n_examples 69523
+echo "prompt learning: serialised training with different training size"
+# python src/prompt_engineering.py --n_train 0 --balanced_train 0 --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
+# python src/prompt_engineering.py --n_train 16  --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
+# python src/prompt_engineering.py --n_train 16 --balanced_train --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
+
+# python src/prompt_engineering.py --n_train 32  --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
+# python src/prompt_engineering.py --n_train 32 --balanced_train --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
+
+# python src/prompt_engineering.py --n_train 64  --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
+# python src/prompt_engineering.py --n_train 64 --balanced_train --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
+
+# python src/prompt_engineering.py --n_train 128  --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
+# python src/prompt_engineering.py --n_train 128 --balanced_train --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
+
+# python src/prompt_engineering.py --n_train 256 --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
+# python src/prompt_engineering.py --n_train 256 --balanced_train --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
+
+# python src/prompt_engineering.py --n_train 512 --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
+# python src/prompt_engineering.py --n_train 512 --balanced_train --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
+
+# python src/prompt_engineering.py --n_train 1024 --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
+# python src/prompt_engineering.py --n_train 1024 --balanced_train --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
