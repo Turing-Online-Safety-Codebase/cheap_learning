@@ -1,9 +1,9 @@
 #!/bin/bash
 
 echo "prompt learning: serialised training with different training size"
-# python src/prompt_engineering.py --n_train 0 --balanced_train 0 --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
-# python src/prompt_engineering.py --n_train 16  --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
-# python src/prompt_engineering.py --n_train 16 --balanced_train --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
+python src/prompt_engineering.py --n_train 0 --balanced_train 0 --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
+python src/prompt_engineering.py --n_train 16  --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
+python src/prompt_engineering.py --n_train 16 --balanced_train --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
 
 # python src/prompt_engineering.py --n_train 32  --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
 # python src/prompt_engineering.py --n_train 32 --balanced_train --model_name distilbert --model_path "distilbert-base-cased" --task "binary_abuse"
