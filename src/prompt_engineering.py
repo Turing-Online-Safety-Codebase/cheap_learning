@@ -2,9 +2,10 @@
 # -*- coding: UTF-8 -*-
 
 """
-Runs Prompt engineering experiments. (in progress)
+Runs Prompt engineering experiments.
 """
 
+import os
 import argparse
 import torch
 import pandas
@@ -13,25 +14,29 @@ import datetime
 import logging
 import numpy
 from openprompt.data_utils import InputExample
-from openprompt.plms import load_plm
+# from openprompt.plms import load_plm
 from openprompt.prompts import ManualTemplate, ManualVerbalizer
 from openprompt import PromptForClassification, PromptDataLoader
 from openprompt.utils.reproduciblity import set_seed
 from transformers import AdamW
 from evaluation import evaluate, get_results_dict, save_results
-from helper_functions import load_n_samples, load_balanced_n_samples, convert_labels
+from helper_functions import check_dir_exists, load_n_samples, load_balanced_n_samples, convert_labels
+from load_lm import load_plm
 
 logger = logging.getLogger(__name__)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Prompt learning")
-    parser.add_argument('--n_examples', type=str, default='15,20,32,50,70,100,150', help='num of training points tested (seperated by ",", e.g., "15,20")')
+    parser.add_argument('--task', type=str, default='binary_abuse', help = 'name of task')
+    parser.add_argument('--prompt', type=str, default='{"placeholder":"text_a"} It was? {"mask"}', help = 'prompt')
+    parser.add_argument('--n_train', type=int, default=16, help='num of training points tested (seperated by ",", e.g., "15,20")')
+    parser.add_argument('--n_eval', type=int, default=-1, help='num of eval entries. Set to -1 to take all entries.')
+    parser.add_argument('--eval_set', type=str, default="dev_sample", help='name of eval set')
     parser.add_argument('--model_name', type=str, default='bert', help='name of the model')
     parser.add_argument('--model_path', type=str, default='bert-base-cased', help='path to the model')
-    parser.add_argument('--use_cuda', type=bool, default=True, help='if using cuda')
-    parser.add_argument('--balanced_train', type=bool, action=argparse.BooleanOptionalAction, help='if training entries are balanced by class label')
-    parser.add_argument('--output_dir', type=str, default='results', help='directory to the results')
-    parser.add_argument('--eval_steps', type=int, default='4', help='num of update steps between two evaluations')
+    parser.add_argument('--use_cuda', action='store_false', help='If using cuda. Default to True')
+    parser.add_argument('--balanced_train', action='store_true', help='If training entries are balanced by class label. Default to False.')
+    parser.add_argument('--eval_batch_size', type=int, default=128, help='num of examples evaluated at once')
     pars_args = parser.parse_args()
 
     print("the inputs are:")
@@ -39,19 +44,19 @@ def parse_args():
         print(f"{arg} is {getattr(pars_args, arg)}")
     return pars_args
 
-def main(n_examples, template, seed, output_dir, model_name, model_path, balanced_train, use_cuda):
+def main(data_dir, n_train, n_eval, eval_set, template, seed, output_dir, model_name, model_path, balanced_train, use_cuda, eval_batch_size):
     datetime_str = str(datetime.datetime.now())
 
     set_seed(seed)
 
     # Setup logging
     logger.setLevel(logging.DEBUG)
-    handler = logging.FileHandler(f"{output_dir}/{datetime_str}.log")
-    # format = logging.Formatter('%(asctime)s  %(name)s %(levelname)s: %(message)s')
-    # handler.setFormatter(format)
+    log_dir = f'{output_dir}/logs'
+    check_dir_exists(log_dir)
+    handler = logging.FileHandler(f"{log_dir}/{datetime_str}.log")
     logger.addHandler(handler)
 
-    # Measure training run time, run_time will be 0 if n = 0 (i.e. no training)
+    # Measure training run time, run_time will be 0 if n_train = 0 (i.e. no training)
     run_time = 0
 
     # Load a Pre-trained Language Model (PLM).
@@ -106,7 +111,6 @@ def main(n_examples, template, seed, output_dir, model_name, model_path, balance
                 gold_labels = numpy.concatenate((gold_labels, labels.cpu()), axis=0)
                 preds = numpy.concatenate((preds, torch.argmax(logits, dim=-1).cpu()), axis=0)
 
-        # logger.info(f"num of true and prediction: {sum(gold_labels)} and {sum(preds)}")
         # Compute scores
         results = evaluate(gold_labels.tolist(), preds.tolist())
         return gold_labels, preds, results
@@ -114,52 +118,34 @@ def main(n_examples, template, seed, output_dir, model_name, model_path, balance
     # Prepare dataset
     raw_dataset = {}
     if balanced_train is False:
-        raw_dataset['train'] = load_n_samples('data', 'binary_abuse', 'train', int(n_examples))
+        raw_dataset['train'], n_classes_train = convert_labels(load_n_samples(data_dir, 'binary_abuse', 'train', n_train))
     else:
-        raw_dataset['train'] = load_balanced_n_samples('data', 'binary_abuse', 'train', int(n_examples))
-    
-    raw_dataset['val'] = pandas.read_csv("data/binary_abuse/clean_data/binary_abuse_dev.csv")
-    raw_dataset['test'] = pandas.read_csv("data/binary_abuse/clean_data/binary_abuse_test.csv")
-    raw_dataset['train'], n_classes = convert_labels(raw_dataset['train'])
-    raw_dataset['val'], n_classes = convert_labels(raw_dataset['val'])
-    raw_dataset['test'], n_classes = convert_labels(raw_dataset['test'])
-    logger.info(f'--{num} number of training examples--\n')
-    logger.info(f"--label distribution for train set--\n{raw_dataset['train']['label'].value_counts()}")
-    n_dev, n_test = len(raw_dataset['val']), len(raw_dataset['test'])
+        raw_dataset['train'], n_classes_train = convert_labels(load_balanced_n_samples(data_dir, 'binary_abuse', 'train', n_train))
+    raw_dataset['eval'], n_classes_eval = convert_labels(load_n_samples(data_dir, 'binary_abuse', eval_set, n_eval))
 
     dataset = {}
-    for split in ['train', 'val', 'test']:
+    for split in ['train', 'eval']:
+        logger.info(f'--{len(raw_dataset[split])} examples in {split} set--\n')
+        logger.info(f"--label distribution for {split} set--\n{raw_dataset[split]['label'].value_counts()}")
         dataset[split] = []
         for index, row in raw_dataset[split].iterrows():
             input_example = InputExample(text_a=row['text'], label=int(row['label']), guid=row['rev_id'])
             dataset[split].append(input_example)
 
-    test_dataloader = PromptDataLoader(
-        dataset=dataset["test"],
+    eval_dataloader = PromptDataLoader(
+        dataset=dataset["eval"],
         template=promptTemplate,
         tokenizer=tokenizer,
         tokenizer_wrapper_class=WrapperClass,
         max_seq_length=256,
-        batch_size=128,
+        batch_size=eval_batch_size,
         shuffle=False,
         teacher_forcing=False,
         predict_eos_token=False,
         truncate_method="tail")
 
-    validation_dataloader = PromptDataLoader(
-            dataset=dataset["val"],
-            template=promptTemplate,
-            tokenizer=tokenizer,
-            tokenizer_wrapper_class=WrapperClass,
-            max_seq_length=256,
-            batch_size=128,
-            shuffle=False,
-            teacher_forcing=False,
-            predict_eos_token=False,
-            truncate_method="tail")
-
-    if int(n_examples) > 0:
-        # If n_examples > 0, do train.
+    if int(n_train) > 0:
+        # If n_train > 0, do train.
         # Otherwise, do zero-shot evaluation on dev and test set
         train_dataloader = PromptDataLoader(
             dataset=dataset['train'],
@@ -173,6 +159,7 @@ def main(n_examples, template, seed, output_dir, model_name, model_path, balance
             predict_eos_token=False,
             truncate_method="tail")
 
+        logger.info("--Model Training--")
         start = time.time()
         for epoch in range(1, 4):
             promptModel.train()
@@ -188,37 +175,40 @@ def main(n_examples, template, seed, output_dir, model_name, model_path, balance
                 tot_loss += loss.item()
                 optimizer.step()
                 logger.info(f"Epoch {epoch}, step {step}, average loss: {tot_loss/(step+1)}")
-            logger.info("--Perform validation--")
         end = time.time()
         run_time = end - start
-        val_gold_labels, val_preds, val_result = inference(promptModel, validation_dataloader)
-    else:        
-        logger.info("--Perform validation--")
-        val_gold_labels, val_preds, val_result = inference(promptModel, validation_dataloader)
 
     # Inference and evalute
-    logger.info("--Perform testing--")
-    test_gold_labels, test_preds, test_result = inference(promptModel, test_dataloader)
+    logger.info("--Model Evaluation--")
+    eval_gold_labels, eval_preds, eval_result = inference(promptModel, eval_dataloader)
 
-    datetime_str = str(datetime.datetime.now())
+    datetime_str = datetime.now().strftime("%Y%m%d-%H%M%S")
     results_dict = get_results_dict(TASK, TECH, model_name, run_time,
-                    test_gold_labels, test_preds,
-                    val_gold_labels, val_preds,
-                    int(n_examples), n_dev, n_test, balanced_train, seed, datetime_str, template)
+                    eval_gold_labels, eval_preds, eval_set,
+                    n_train, n_eval, balanced_train, seed, datetime_str, template)
     # add test_result to results_dict
-    results_dict.update(test_result)
-    save_results(output_dir, datetime_str, results_dict)
+    results_dict.update(eval_result)
+    save_str = f'n={n_train}_bal={balanced_train}_s={seed}'
+    save_results(output_dir, save_str, results_dict)
 
 if __name__ == '__main__':
     args = parse_args()
 
-    num_examples = args.n_examples.split(',')
-    # templates_list = ['{"placeholder":"text_a"} Is this text abusive? {"mask"}', 
+    # Set global vars
+    TECH = 'prompt_engineering'
+    TASK = args.task
+
+    # Set dirs
+    main_dir = os.getcwd()
+    data_dir = f"data"
+    output_dir = f'results/{TASK}/{TECH}'
+
+    # prompt_list = ['{"placeholder":"text_a"} Is this text abusive? {"mask"}', 
     #              '{"placeholder":"text_a"} Does this text contain abuse? {"mask"}',
     #              '{"placeholder":"text_a"} It was? {"mask"}',
     #              ]
-    templates = '{"placeholder":"text_a"} It was? {"mask"}'
 
-    for num in num_examples:
-        for SEED in [1, 2, 3]:
-            main(num, templates, SEED, args.output_dir, args.model_name, args.model_path, args.balanced_train, args.use_cuda)
+    # Run for multiple training batch sizes and multiple seeds
+    for SEED in [1, 2, 3]:
+        print(f'RUNNING for SEED={SEED}')
+        main(data_dir, args.n_train, args.n_eval, args.eval_set, args.prompt, SEED, output_dir, args.model_name, args.model_path, args.balanced_train, args.use_cuda, args.eval_batch_size)
