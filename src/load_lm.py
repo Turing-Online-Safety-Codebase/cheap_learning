@@ -18,10 +18,8 @@ from transformers import BertConfig, BertTokenizer, BertModel, BertForMaskedLM, 
                          RobertaConfig, RobertaTokenizer, RobertaModel, RobertaForMaskedLM, \
                          AlbertTokenizer, AlbertConfig, AlbertModel, AlbertForMaskedLM, \
                          T5Config, T5Tokenizer, T5ForConditionalGeneration, \
-                         OpenAIGPTTokenizer, OpenAIGPTLMHeadModel, OpenAIGPTConfig, \
                          GPT2Config, GPT2Tokenizer, GPT2LMHeadModel, \
                          OPTConfig, OPTForCausalLM, \
-                         ElectraConfig, ElectraForMaskedLM, ElectraTokenizer, \
                          DistilBertConfig, DistilBertTokenizer, DistilBertModel, DistilBertForMaskedLM, \
                          DebertaV2Config, DebertaV2Tokenizer, DebertaV2Model, DebertaV2ForMaskedLM
 from collections import namedtuple
@@ -62,12 +60,6 @@ _MODEL_CLASSES = {
         'model': AlbertForMaskedLM,
         'wrapper': MLMTokenizerWrapper
     }),
-    'gpt': ModelClass(**{
-        'config': OpenAIGPTConfig,
-        'tokenizer': OpenAIGPTTokenizer,
-        'model': OpenAIGPTLMHeadModel,
-        'wrapper': LMTokenizerWrapper
-    }),
     'gpt2': ModelClass(**{
         'config': GPT2Config,
         'tokenizer': GPT2Tokenizer,
@@ -91,12 +83,6 @@ _MODEL_CLASSES = {
         'tokenizer': GPT2Tokenizer,
         'model': OPTForCausalLM,
         'wrapper': LMTokenizerWrapper,
-    }),
-    'electra': ModelClass(**{
-        'config': ElectraConfig,
-        'tokenizer': ElectraTokenizer,
-        'model': ElectraForMaskedLM,
-        'wrapper': MLMTokenizerWrapper,
     }),
 }
 

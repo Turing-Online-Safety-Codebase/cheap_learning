@@ -8,7 +8,6 @@ Runs Prompt engineering experiments.
 import os
 import argparse
 import torch
-import pandas
 import time
 import datetime
 import logging
@@ -71,8 +70,8 @@ def main(data_dir, n_train, n_eval, eval_set, template, seed, output_dir, model_
     promptVerbalizer = ManualVerbalizer(
         classes= [0, 1],    # Two classes: 0 for not abusive and 1 for abusive
         label_words={
-            0: ["love"],
-            1: ["hate"],
+            0: ["love, positive"],
+            1: ["hate, negative"],
         },
         tokenizer=tokenizer,
     )
@@ -181,13 +180,13 @@ def main(data_dir, n_train, n_eval, eval_set, template, seed, output_dir, model_
     logger.info("--Model Evaluation--")
     eval_gold_labels, eval_preds, eval_result = inference(promptModel, eval_dataloader)
 
-    datetime_str = datetime.now().strftime("%Y%m%d-%H%M%S")
+    datetime_str = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     results_dict = get_results_dict(TASK, TECH, model_name, run_time,
                     eval_gold_labels, eval_preds, eval_set,
                     n_train, n_eval, balanced_train, seed, datetime_str, template)
     # add test_result to results_dict
     results_dict.update(eval_result)
-    save_str = f'n={n_train}_bal={balanced_train}_s={seed}'
+    save_str = f'mod={model_name}_n={n_train}_bal={balanced_train}_s={seed}'
     save_results(output_dir, save_str, results_dict)
 
 if __name__ == '__main__':
