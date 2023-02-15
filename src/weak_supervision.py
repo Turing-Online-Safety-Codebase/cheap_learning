@@ -16,10 +16,13 @@ logger = logging.getLogger(__name__)
 def parse_args():
     parser = argparse.ArgumentParser(description="Weak Supervision")
     parser.add_argument('--n_train', type=int, default=16, help='num of training entries')
-    parser.add_argument('--n_test', type=int, default=100, help='num of testing entries. If -1 is given, then whole set is used as input')
-    parser.add_argument('--n_dev', type=int, default=100, help='num of dev entries. If -1 is given, then whole set is used as input')
-    parser.add_argument('--balanced_train', action=argparse.BooleanOptionalAction, default=False, help='if training entries are balanced by class label')
-    parser.add_argument('--dev', action=argparse.BooleanOptionalAction, default=True, help='dev split included?')
+    parser.add_argument('--n_eval', type=int, default=-1, help='num of eval entries. Set to -1 to take all entries.')
+    parser.add_argument('--eval_set', type=str, default="dev_sample", help='name of eval set')    
+    #parser.add_argument('--balanced_train', type=bool, action=argparse.BooleanOptionalAction, help='if training entries are balanced by class label')
+    parser.add_argument('--balanced_train', action='store_true')
+    parser.add_argument('--no-balanced_train', dest='balanced_train', action='store_false')
+    parser.set_defaults(balanced_train=True)
+
     parser.add_argument('--model_name', type=str, default='LabelModel', help='name of the model')
     parser.add_argument('--task', type=str, help='target task')
     parser.add_argument('--filename_annotations', type=str, help='filename of annotations csv')
@@ -36,7 +39,7 @@ map_bool = lambda x: 1 if x else 0
 
 def prepare_dataset(raw_data: dict, 
                     columns = ['text', 'label', 'rev_id'],
-                    splits = ['train', 'test', 'dev'],
+                    splits = ['train', 'eval'],
                     ) -> dict:
     """
     This function only works for binary abuse dataset for now
@@ -59,10 +62,9 @@ def main(
         model_name: str, 
         data_dir: str,
         output_dir: str,
-        splits: list,
         n_train: int, 
-        n_test: int,
-        n_dev: int,
+        n_eval: int,
+        eval_set: str, 
         balanced_train: bool,
         path_annotations: str,
         path_keywords: str, 
@@ -91,19 +93,15 @@ def main(
     else:
         raw_data[split], n_classes_train = convert_labels(load_n_samples(data_dir, TASK, split, n_train)) 
 
-    split = 'test'
-    raw_data[split], n_classes_test = convert_labels(load_n_samples(data_dir, TASK, split, n_test))
+    split = 'eval'
+    raw_data[split], n_classes_eval = convert_labels(load_n_samples(data_dir, TASK, eval_set, n_eval))
 
-    if 'dev' in splits:
-        split = 'dev'
-        raw_data[split], n_classes_dev = convert_labels(load_n_samples(data_dir, TASK, split, n_dev))
-
-    if n_classes_train == n_classes_dev == n_classes_test:
+    if n_classes_train == n_classes_eval:
         n_classes = n_classes_train
     else:
-        print("Error: train, test or dev have different number of classes")
+        print("Error: train and eval have different number of classes")
 
-    for split in splits:
+    for split in ['train', 'eval']:
         logger.info(f'--{len(raw_data[split])} examples in {split} set--\n')
         logger.info(f"--label distribution for {split} set--\n{raw_data[split]['label'].value_counts()}")
     
@@ -119,36 +117,31 @@ def main(
 
     applier = PandasLFApplier(lfs=lfs)
     L_train = applier.apply(df=dataset['train'])
-    L_test = applier.apply(df=dataset['test'])
+    L_eval = applier.apply(df=dataset['eval'])
 
     label_model = LabelModel(cardinality=n_classes_train, verbose=False)
-    Y_test = dataset['test'].label.values
+    Y_eval = dataset['eval'].label.values
 
-    if 'dev' in splits:
-        L_dev = applier.apply(df=dataset['dev'])
-        Y_dev = dataset['dev'].label.values
-        start = dt.datetime.now()
-        label_model.fit(L_train=L_train, Y_dev=Y_dev, n_epochs=100, log_freq=10, seed=seed)
-    else:
-        start = dt.datetime.now()
-        label_model.fit(L_train=L_train, n_epochs=100, log_freq=10, seed=seed)
+   
+    start = dt.datetime.now()
+    label_model.fit(L_train=L_train, n_epochs=100, log_freq=10, seed=seed)
     end = dt.datetime.now()
 
     ### Model evaluation
     logger.info("--Model Evaluation--")
     runtime = str(end-start)
-    test_preds = label_model.predict(L_test, tie_break_policy=tie_break_policy)
-    dev_preds = label_model.predict(L_dev, tie_break_policy=tie_break_policy)
+    eval_preds = label_model.predict(L_eval, tie_break_policy=tie_break_policy)
     results_dict = get_results_dict(TASK, TECH, model_name, runtime,
-                    Y_test, test_preds,
-                    Y_dev, dev_preds,
-                    n_train, n_dev, n_test, balanced_train, seed, datetime_str)
+                    Y_eval, eval_preds, eval_set,
+                    n_train, n_eval,
+                    balanced_train, seed, datetime_str)
 
     ### Save output
-    save_results(output_dir, datetime_str, results_dict)
+    save_str = f"mod={model_name}_n={n_train}_bal={balanced_train}_s={seed}"
+    save_results(output_dir, save_str, results_dict)
 
 
-###
+### main
 if __name__ == '__main__':
     args = parse_args()
 
@@ -158,21 +151,17 @@ if __name__ == '__main__':
 
     # Set dirs
     path = os.getcwd()
-    main_dir = os.path.split(path)[0]
+    main_dir = path#os.path.split(path)[0]
     data_dir = f"{main_dir}/data"
     raw_data_dir = f"{main_dir}/data/{TASK}/raw_data/"
     misc_data_dir = f"{main_dir}/data/{TASK}/misc/"
     output_dir = f'{main_dir}/results/{TASK}/{TECH}'
 
-    if args.dev:
-        splits = ['train', 'test', 'dev']
-    else:
-        splits = ['train', 'test']
-
     path_annotations = raw_data_dir + args.filename_annotations
     path_keywords = misc_data_dir + args.filename_keywords
     # Run for multiple seeds
     for SEED in [1,2,3]:
-        main(TASK, TECH, SEED, args.model_name, data_dir, output_dir, splits, 
-                args.n_train, args.n_test, args.n_dev, args.balanced_train,
+        print(f"RUNNING for SEED={SEED}")
+        main(TASK, TECH, SEED, args.model_name, data_dir, output_dir, 
+                args.n_train, args.n_eval, args.eval_set, args.balanced_train,
                 path_annotations, path_keywords, args.tie_break_policy)
