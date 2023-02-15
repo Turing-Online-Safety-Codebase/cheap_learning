@@ -10,7 +10,7 @@ import os
 from datetime import datetime
 import logging
 import numpy as np
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer, pipeline
 from datasets import Dataset, DatasetDict
 from evaluation import get_results_dict, save_results
 from helper_functions import check_dir_exists, load_n_samples, load_balanced_n_samples, convert_labels
@@ -46,6 +46,19 @@ def get_pred_labels(trainer, tokenized_datasets, split):
     y_true = np.array(tokenized_datasets[split]['label'])
     return y_pred, y_true
 
+def get_pred_labels_zero_shot(tokenized_datasets, split, labels, model_name, tokenizer):
+    classifier = pipeline(task="zero-shot-classification", model=model_name, tokenizer=tokenizer)
+    # Below does not seem to work in batches, so loop through the dataset for prediction
+    # preds = classifier(tokenized_datasets[split]['text'], batch_size=16, candidate_labels=labels)
+    # y_pred = [pred["labels"][0] for pred in preds]
+    y_pred = []
+    for text in tokenized_datasets[split]['text']:            
+        preds = classifier(text, candidate_labels=labels)
+        print(preds["labels"][0], preds["labels"])
+        y_pred.append(preds["labels"][0])
+    y_true = np.array(tokenized_datasets[split]['label'])
+    return y_pred, y_true
+
 def get_runtime(train_output):
     metrics = train_output.metrics
     return metrics['train_runtime']
@@ -68,8 +81,9 @@ def main(SEED, TASK, TECH, data_dir, output_dir, n_train, balanced_train, eval_s
     else:
         train_df, n_classes_train = convert_labels(load_balanced_n_samples(data_dir, TASK, "train", n_train))
     eval_df, n_classes_eval = convert_labels(load_n_samples(data_dir, TASK, eval_set, n_eval))
-    if n_classes_train == n_classes_eval:
+    if n_classes_train == n_classes_eval or n_train == 0:
         n_classes = n_classes_train
+        labels = eval_df['label'].unique()
     else:
         print("Error: train and eval have different number of classes")
     for df, split in zip([train_df, eval_df], ['train', 'dev', 'test']):
@@ -85,22 +99,31 @@ def main(SEED, TASK, TECH, data_dir, output_dir, n_train, balanced_train, eval_s
         return tokenizer(examples["text"], padding="max_length", truncation=True)
     tokenized_datasets = dataset.map(tokenize_function, batched=True)
 
-    # Model Training
-    logger.info("--Model Training--")
     model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=n_classes)
+
     training_args = TrainingArguments(output_dir=output_dir, 
-                                    do_predict = False, do_eval = False,
-                                    seed=SEED)
+                                        do_predict = False, do_eval = False,
+                                        seed=SEED)
     trainer = Trainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_datasets["train"])
-    train_output = trainer.train()
 
-    # Model Evaluation
-    logger.info("--Model Evaluation--")
-    runtime = get_runtime(train_output)
-    eval_pred, eval_true = get_pred_labels(trainer, tokenized_datasets, "eval")
+    # Model Training
+    if n_train > 0:
+        logger.info("--Model Training--")
+        train_output = trainer.train()
+        runtime = get_runtime(train_output)
+
+        # Model Evaluation
+        logger.info("--Model Evaluation--")
+        eval_pred, eval_true = get_pred_labels(trainer, tokenizer, tokenized_datasets, "eval", n_train, labels, model_name)
+    else:
+        runtime = 0
+        # Zero-Shot Model Evaluation
+        logger.info("--Zero-Shot Model Evaluation--")
+        eval_pred, eval_true = get_pred_labels_zero_shot(tokenized_datasets, "eval", labels, model_name, tokenizer)
+
     datetime_str = datetime.now().strftime("%Y%m%d-%H%M%S")
     results_dict = get_results_dict(TASK, TECH, 
                                     model_name, runtime,
@@ -108,7 +131,9 @@ def main(SEED, TASK, TECH, data_dir, output_dir, n_train, balanced_train, eval_s
                                     n_train, n_eval, balanced_train, 
                                     SEED, datetime_str)
     # Save output
-    save_str = f'n={n_train}_bal={balanced_train}_s={SEED}'
+    if model_name == "microsoft/deberta-v3-base":
+        model_name = "deberta-v3-base"
+    save_str = f'mod={model_name}_n={n_train}_bal={balanced_train}_s={SEED}'
     save_results(output_dir, save_str, results_dict)
 
 if __name__ == '__main__':
