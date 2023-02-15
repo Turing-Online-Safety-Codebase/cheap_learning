@@ -74,15 +74,15 @@ def get_results_dict(task, technique,
         technique (str): The learning technique e.g., transfer_learning.
         model_name (str): The model name (if applicable).
         runtime (str): The training runtime of the technique in seconds.
-        eval_true (np.array): True labels for eval set.
-        eval_pred (np.array): Pred labels for eval set.
+        eval_true (np.array or list): True labels for eval set.
+        eval_pred (np.array or list): Pred labels for eval set.
         eval_set (str): Name of eval set e.g. dev_sampled or test
         n_train (int): Number of training entries.
         n_eval (int): Number of eval entries.
         balanced_train (bool): Whether training data is balanced by class label.
         seed (int): Random seed for experiment run.
         datetime_str (str): Current datetime.
-        template(str) (optional): prompt template.
+        template (str) (optional): prompt template.
 
     Returns:
         dict: Dictionary of results.
@@ -97,8 +97,8 @@ def get_results_dict(task, technique,
     results_dict['eval_set'] = eval_set
     results_dict['balanced_train'] = balanced_train
     results_dict['datetime'] = datetime_str
-    results_dict['eval_true'] = eval_true.tolist()
-    results_dict['eval_pred'] = eval_pred.tolist()
+    results_dict['eval_true'] = eval_true if type(eval_true) == list else eval_true.tolist() 
+    results_dict['eval_pred'] = eval_pred if type(eval_pred) == list else eval_pred.tolist() 
     results_dict['seed'] = seed
     if technique == 'prompt_engineering':
         results_dict['template'] = template
