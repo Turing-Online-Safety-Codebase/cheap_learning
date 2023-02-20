@@ -9,6 +9,17 @@ import os
 import pandas as pd
 from sklearn.utils import shuffle
 
+def reduce_path(path, target_dir):
+    # Reduce path so that target_dir is the last term
+    p = path 
+    while p.split('/')[-1]!=target_dir:
+        if '/' not in p: raise Exception(f"Dir {target_dir} not found in")
+        # cut off last term 
+        p = '/'.join(p.split('/')[:-1])
+
+    return p
+
+
 def check_dir_exists(path):
     """Checks if folder directory already exists, else makes directory.
     Args:

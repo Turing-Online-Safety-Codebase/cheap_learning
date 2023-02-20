@@ -9,17 +9,15 @@ import os
 import pandas as pd
 import datasets
 from sklearn.utils import shuffle
-from helper_functions import check_dir_exists
+from helper_functions import check_dir_exists, reduce_path
 from cleaning_functions import clean_text, drop_nans
 
 def main():
     SEED = 123 
     task = 'binary_movie_sentiment'
 
-    path = os.getcwd()
-    main_dir = os.path.split(path)[0]
-    print(f'Current working directory is: {main_dir}')
-    task_dir = f"{main_dir}/data/{task}"
+    path = reduce_path(os.getcwd(), 'cheap_learning')
+    task_dir = f"{path}/data/{task}"
     check_dir_exists(task_dir)
 
     # download data
@@ -59,9 +57,12 @@ def main():
     # clean text
     df['text'] = df['text'].apply(clean_text)
 
+    # create id
+    df['id'] = df.index+1
+
     # save main df
     check_dir_exists(f"{task_dir}/clean_data")
-    df.to_csv(f'{task_dir}/clean_data/{task}.csv', encoding='utf-8', index=True)
+    df.to_csv(f'{task_dir}/clean_data/{task}.csv', encoding='utf-8', index=False)
 
     # save splits
     splits = ['train', 'test', 'dev']
@@ -69,7 +70,7 @@ def main():
         subset_df = df[df['split']==s]
         print(f"Number of {s} entries: {len(subset_df)}")
         subset_df = shuffle(subset_df, random_state=SEED)
-        subset_df.to_csv(f'{task_dir}/clean_data/{task}_{s}.csv', encoding = 'utf-8', index = True)
+        subset_df.to_csv(f'{task_dir}/clean_data/{task}_{s}.csv', encoding = 'utf-8', index=False)
 
 
 if __name__ == '__main__':
