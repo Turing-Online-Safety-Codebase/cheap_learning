@@ -26,6 +26,8 @@ def clean_text(text):
     # remove newline and tab characters
     text = text.replace('\n',' ')
     text = text.replace('\t',' ')
+    text = text.replace('<br /><br />',' ')
+    text = text.replace('<br />',' ')
     # remove leading ">" (reddit artifact)
     text = text.lstrip('>')
     # collapse whitespace into single whitespace
