@@ -8,3 +8,6 @@ __pycache__/
 **/__pycache__
 
 .vscode/
+
+# this file is too big for github
+data/binary_movie_sentiment/clean_data/binary_movie_sentiment.csv 

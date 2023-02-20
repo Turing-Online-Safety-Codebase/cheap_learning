@@ -28,9 +28,8 @@ from sklearn.model_selection import train_test_split
 
 def main():
     task = sys.argv[1] # binary_abuse or binary_movie_sentiment
-    if task=="binary_abuse": x_cols = ['rev_id','text','split']
-    elif task=="binary_movie_sentiment": x_cols = ['text','split']
-    else: raise Exception(f"Invalid task {task}")
+    if task not in ['binary_abuse', 'binary_movie_sentiment']: 
+        raise Exception(f"Invalid task {task}")
 
     SEED = 123
 
@@ -45,7 +44,7 @@ def main():
     print(f"Original value counts:\n{orig_dev['label'].value_counts(normalize = True)}")
 
     # Take 10% sample stratified by class labels
-    X = orig_dev[x_cols]
+    X = orig_dev[['id','text','split']]
     Y = np.array(orig_dev['label'])
     unsampled_X, sample_X, unsampled_Y, sample_Y = train_test_split(X, Y, test_size = 0.1, stratify = Y, random_state = SEED)
     
