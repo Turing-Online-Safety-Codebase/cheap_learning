@@ -51,11 +51,10 @@ def get_pred_labels_zero_shot(tokenized_datasets, split, labels, model_name, tok
     # Below does not seem to work in batches, so loop through the dataset for prediction
     # preds = classifier(tokenized_datasets[split]['text'], batch_size=16, candidate_labels=labels)
     # y_pred = [pred["labels"][0] for pred in preds]
-    y_pred = []
+    y_pred = np.array([])
     for text in tokenized_datasets[split]['text']:            
         preds = classifier(text, candidate_labels=labels)
-        print(preds["labels"][0], preds["labels"])
-        y_pred.append(preds["labels"][0])
+        y_pred = np.append(y_pred, preds["labels"][0])
     y_true = np.array(tokenized_datasets[split]['label'])
     return y_pred, y_true
 
@@ -96,7 +95,7 @@ def main(SEED, TASK, TECH, data_dir, output_dir, n_train, balanced_train, eval_s
     logger.info("--Tokenization--")
     tokenizer= AutoTokenizer.from_pretrained(model_name)
     def tokenize_function(examples):
-        return tokenizer(examples["text"], padding="max_length", truncation=True)
+        return tokenizer(examples["text"], padding="max_length", truncation=True, max_length=128)
     tokenized_datasets = dataset.map(tokenize_function, batched=True)
 
     model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=n_classes)
@@ -117,7 +116,7 @@ def main(SEED, TASK, TECH, data_dir, output_dir, n_train, balanced_train, eval_s
 
         # Model Evaluation
         logger.info("--Model Evaluation--")
-        eval_pred, eval_true = get_pred_labels(trainer, tokenizer, tokenized_datasets, "eval", n_train, labels, model_name)
+        eval_pred, eval_true = get_pred_labels(trainer, tokenized_datasets, "eval")
     else:
         runtime = 0
         # Zero-Shot Model Evaluation
@@ -131,8 +130,7 @@ def main(SEED, TASK, TECH, data_dir, output_dir, n_train, balanced_train, eval_s
                                     n_train, n_eval, balanced_train, 
                                     SEED, datetime_str)
     # Save output
-    if model_name == "microsoft/deberta-v3-base":
-        model_name = "deberta-v3-base"
+    model_name = model_name.split('/')[1] if '/' in model_name else model_name
     save_str = f'mod={model_name}_n={n_train}_bal={balanced_train}_s={SEED}'
     save_results(output_dir, save_str, results_dict)
 
