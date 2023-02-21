@@ -18,6 +18,7 @@ import numpy as np
 import json
 from matplotlib import pyplot as plt
 import matplotlib
+import seaborn as sns
 
 from sklearn.metrics import f1_score, roc_curve
 
@@ -132,15 +133,14 @@ def get_fprs(model: str,
     """
 
     fprs = np.array([])
-    for (j, n) in enumerate(n_trains):
-        f1_seeds = np.zeros(len(seeds))
-        for (i, seed) in enumerate(seeds):
+    for n in n_trains:
+        for seed in seeds:
             key = filename_format.format(model, n, balanced, seed)
 
             eval_true = dataset[key]['eval_true']
             eval_pred = dataset[key]['eval_pred']
             
-            fpr, tpr, _ = roc_curve(eval_true, eval_pred)
+            fpr, _, _ = roc_curve(eval_true, eval_pred)
             
             fprs = np.concatenate([fprs, fpr])
 
@@ -173,9 +173,8 @@ def get_tprs(fprs: np.array,
     """
 
     tprs = np.array([])
-    for (j, n) in enumerate(n_trains):
-        f1_seeds = np.zeros(len(seeds))
-        for (i, seed) in enumerate(seeds):
+    for n in n_trains:
+        for seed in seeds:
             key = filename_format.format(model, n, balanced, seed)
             
             eval_true = dataset[key]['eval_true']
@@ -206,6 +205,47 @@ def get_mean_std_tprs(tprs: np.array) -> tuple:
     tprs_std = tprs.std(axis=0)
 
     return tprs_mean, tprs_std
+
+def timestr_to_float(string, separator):
+    arr_time = string.split(separator)
+    num = 0
+    
+    if len(arr_time) > 3:
+        num = float(arr_time)*24*60*60
+    else:
+        num = 0
+        
+    for (i, timestr) in enumerate(arr_time[-3:]):
+        exp = 60**(2-i)
+        num += float(timestr)*exp
+        
+    return num
+
+def get_times(model, n_trains, seeds, balanced, dataset, filename_format):
+    times = np.zeros((len(seeds), len(n_trains)))
+    for (j, n_train) in enumerate(n_trains):
+        for (i, seed) in enumerate(seeds):
+            key = filename_format.format(model, n_train, balanced, seed)
+
+            time_str = dataset[key]['train_runtime']
+            time_float = timestr_to_float(time_str, ":")
+
+            times[i, j] = time_float
+
+    return times
+
+def define_figure_plots(figsize, ylabel):
+    fig = plt.figure(figsize=figsize)
+
+    plt.grid(alpha=0.3)
+
+    plt.xlabel('Training points', size='x-large')
+    plt.ylabel(ylabel, size='x-large')
+
+    plt.xticks(size='large')
+    plt.yticks(size='large')
+    
+    return fig
 
 ########### Plotting functions #################
 
@@ -257,7 +297,8 @@ def plot_mean_std(fig, x, mean, std, fmt, label, alpha_mean, threshold=0.5, min_
                     
 
 def plot_learning_curve(task: str,
-                        model: str,
+                        method: str,
+                        models,
                         n_trains: list,
                         seeds: list,
                         dataset: dict,
@@ -272,27 +313,32 @@ def plot_learning_curve(task: str,
     plt.xlabel('Training points', size='x-large')
     plt.ylabel('Macro F1 score', size='x-large')
     
-    plt.title(f"Task: {task}, model: {model}", size='large')
+    task = task.replace("_", " ")
+    method = method.replace("_", " ")
+    plt.title(f"Task: {task}, method: {method}", size='large')
 
     plt.grid(alpha=0.3)
+    colors = [('b.-', 'r.-'), ('g.-', 'm.-')]
 
-    balanced = True
-    label = f'balanced training: {balanced}'
-    fmt = 'b.-'
+    for (i, model) in enumerate(models):
+        balanced = True
+        label = f'{model} - balanced'
+        fmt = colors[i][0]
     
-    f1_mean_true, f1_std_true = get_f1_score(model, n_trains, seeds, balanced, dataset)
-    plot_mean_std(fig, n_trains, f1_mean_true, f1_std_true, fmt, label, alpha)
+        f1_mean_true, f1_std_true = get_f1_score(model, n_trains, seeds, balanced, dataset)
+        plot_mean_std(fig, n_trains, f1_mean_true, f1_std_true, fmt, label, alpha)
     
-    balanced = False
-    label = f'balanced training: {balanced}'
-    fmt = 'r.-'
+        balanced = False
+        label = f'{model} - not balanced'
+        fmt = colors[i][1]
 
-    f1_mean_false, f1_std_false = get_f1_score(model, n_trains, seeds, balanced, dataset)
-    plot_mean_std(fig, n_trains, f1_mean_false, f1_std_false, fmt, label, alpha)
+        f1_mean_false, f1_std_false = get_f1_score(model, n_trains, seeds, balanced, dataset)
+        plot_mean_std(fig, n_trains, f1_mean_false, f1_std_false, fmt, label, alpha)
 
-    plt.legend(fontsize='x-large')
+    plt.legend(fontsize='large')
     
-def plot_roc_curves(model: str,
+def plot_roc_curves(task: str,
+                    model: str,
                     n_trains: list,
                     seeds: list,
                     balanced: bool,
@@ -329,3 +375,73 @@ def plot_roc_curves(model: str,
 
 
     plot_experiment_roc_curves(fig, model, n_trains, seeds, balanced, dataset)
+
+
+def plot_roc_ntrains(task, method, model, n_trains, seeds, balanced, dataset, figsize, color_palette: str = 'mako', filename_format: str = filename_format):
+    fig = plt.figure(figsize=figsize)
+    plt.axes().set_aspect('equal', 'datalim')
+    plt.plot([0, 1], [0, 1], 'r-')
+
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.0])
+
+    plt.xticks(size='large')
+    plt.yticks(size='large')
+
+    plt.xlabel('FP rate', size='x-large')
+    plt.ylabel('TP rate', size='x-large')
+
+    plt.grid(alpha=0.3)
+    plt.title(f"Task: {task}, method: {method}, model: {model}, balanced: {balanced}", size='large')
+
+    colors = sns.color_palette(color_palette, len(n_trains))[::-1]
+
+    for (j, n_train) in enumerate(n_trains):
+        for seed in seeds:
+            key = filename_format.format(model, n_train, balanced, seed)
+            
+            eval_true = dataset[key]['eval_true']
+            eval_pred = dataset[key]['eval_pred']
+
+            fpr, tpr, _ = roc_curve(eval_true, eval_pred)
+            
+            if seed == 1:
+                plt.plot(fpr, tpr, figure=fig, color=colors[j], label=f"{n_train}")
+            else:
+                plt.plot(fpr, tpr, figure=fig, color=colors[j])
+            
+    plt.legend(fontsize='x-large', title='Training points')
+
+
+def plot_times(task, method, models, n_trains, seeds, balanced, dataset, figsize, alpha: float = 0.8, filename_format: str = filename_format):
+
+    fig = define_figure_plots(figsize, 'Training time')
+    colors = [('b', 'r'), ('g', 'm')]
+
+    alpha_fill = alpha-0.5
+
+    task = task.replace('_', ' ')
+    method = method.replace('_', '')
+    plt.title(f"Task: {task}, method: {method}", size='large')
+
+
+    for (i, model) in enumerate(models):    
+        times_balanced = get_times(model, n_trains, seeds, True, dataset, filename_format)
+        times_notbalanced = get_times(model, n_trains, seeds, False, dataset, filename_format)
+
+        label = f'{model} - balanced'
+        plt.plot(n_trains, times_balanced.mean(axis=0), colors[i][0]+'.-', alpha=alpha, label=label, figure=fig)
+        plt.fill_between(n_trains, times_balanced.mean(axis=0)-times_balanced.std(axis=0), 
+                        times_balanced.mean(axis=0)+times_balanced.std(axis=0), 
+                        color=colors[i][0], alpha=alpha_fill, figure=fig)    
+
+        label = f'{model} - not balanced'
+        plt.plot(n_trains, times_notbalanced.mean(axis=0), colors[i][1]+'.-', alpha=alpha_fill+0.5, label=label, figure=fig)
+        plt.fill_between(n_trains, times_notbalanced.mean(axis=0)-times_notbalanced.std(axis=0), 
+                        times_notbalanced.mean(axis=0)+times_notbalanced.std(axis=0), 
+                        color=colors[i][1], alpha=alpha_fill, figure=fig)
+
+    plt.legend(fontsize='large')
+
+
+
