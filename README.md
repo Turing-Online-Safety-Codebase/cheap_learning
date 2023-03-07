@@ -2,8 +2,9 @@
 
 Repo for Turing Online Safety Team Cheap Learning project
 
-Dataset: [Wikipedia Detox](https://github.com/ewulczyn/wiki-detox)
+Abuse Detection Dataset: [Wikipedia Detox](https://github.com/ewulczyn/wiki-detox)
 
+Movie sentiment Dataset: [IMDb](https://huggingface.co/datasets/imdb)
 ```
 .
 ├── src
