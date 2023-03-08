@@ -73,6 +73,33 @@ def load_balanced_n_samples(data_dir, task, split, n_entries):
     shuffled_df = shuffle(df_concat, random_state = SEED)
     return shuffled_df
 
+
+def load_custom_n_samples(seed, data_dir, task, split, n_entries, label_balance: int = 0.5):
+    """Loads first n entries of training dataset split across 2 classes, balanced according to passed proportion.
+
+    Args:
+        seed (float): Random seed to use when shuffling dataset
+        data_dir (str): Directory with data.
+        task (str): Task name e.g. abuse
+        split (str): Split from [train, test, dev] to be sampled from.
+        n_entries (int): Number of entries to sample in total.
+        label_balance (float, optional): Number between 0 and 1 representing the proportion of positive labelled entries to include in the sample.
+    Returns:
+        pd.DataFrame: Dataset of n rows.
+    """
+    df = pd.read_csv(f'{data_dir}/{task}/clean_data/{task}_{split}.csv')
+
+    # make df out of first n rows, matching passed label balance
+    dfn = pd.concat(
+        [
+            df[df['label'] == True].head(int(n_entries*label_balance)), 
+            df[df['label'] == False].head(n_entries - int(n_entries*label_balance)),
+        ]
+    ).reset_index(drop=True)
+
+    # return shuffled result
+    return shuffle(dfn, random_state=seed)
+
 def convert_labels(df):
     """Converts string or boolean labels to integers.
 
