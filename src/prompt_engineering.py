@@ -68,10 +68,10 @@ def main(data_dir, n_train, n_eval, eval_set, template, seed, output_dir, model_
 
     # Define a Verbalizer
     promptVerbalizer = ManualVerbalizer(
-        classes= [0, 1],    # Two classes: 0 for not abusive and 1 for abusive
+        classes= [0, 1],
         label_words={
-            0: ["love, positive"],
-            1: ["hate, negative"],
+            0: ["good", "positive", "great"],
+            1: ["bad", "negative"],
         },
         tokenizer=tokenizer,
     )
@@ -98,28 +98,30 @@ def main(data_dir, n_train, n_eval, eval_set, template, seed, output_dir, model_
 
     def inference(model, dataset):
         model.eval()
-        preds = numpy.array([])
-        gold_labels = numpy.array([])
+        preds = [] #numpy.array([])
+        gold_labels = [] #numpy.array([])
         with torch.no_grad():
             for step, inputs in enumerate(dataset):
                 if use_cuda:
                     inputs = inputs.cuda()
                 logits = model(inputs)
                 labels = inputs['label']
-                gold_labels = numpy.concatenate((gold_labels, labels.cpu()), axis=0)
-                preds = numpy.concatenate((preds, torch.argmax(logits, dim=-1).cpu()), axis=0)
+                # gold_labels = numpy.concatenate((gold_labels, labels.cpu()), axis=0)
+                # preds = numpy.concatenate((preds, torch.argmax(logits, dim=-1).cpu()), axis=0)
+                gold_labels.extend(labels.cpu().tolist()) 
+                preds.extend(torch.argmax(logits, dim=-1).cpu().tolist())
 
         # Compute scores
-        results = evaluate(gold_labels.tolist(), preds.tolist())
+        results = evaluate(gold_labels, preds)
         return gold_labels, preds, results
 
     # Prepare dataset
     raw_dataset = {}
     if balanced_train is False:
-        raw_dataset['train'], n_classes_train = convert_labels(load_n_samples(data_dir, 'binary_abuse', 'train', n_train))
+        raw_dataset['train'], n_classes_train = convert_labels(load_n_samples(data_dir, TASK, 'train', n_train))
     else:
-        raw_dataset['train'], n_classes_train = convert_labels(load_balanced_n_samples(data_dir, 'binary_abuse', 'train', n_train))
-    raw_dataset['eval'], n_classes_eval = convert_labels(load_n_samples(data_dir, 'binary_abuse', eval_set, n_eval))
+        raw_dataset['train'], n_classes_train = convert_labels(load_balanced_n_samples(data_dir, TASK, 'train', n_train))
+    raw_dataset['eval'], n_classes_eval = convert_labels(load_n_samples(data_dir, TASK, eval_set, n_eval))
 
     dataset = {}
     for split in ['train', 'eval']:
@@ -127,7 +129,7 @@ def main(data_dir, n_train, n_eval, eval_set, template, seed, output_dir, model_
         logger.info(f"--label distribution for {split} set--\n{raw_dataset[split]['label'].value_counts()}")
         dataset[split] = []
         for index, row in raw_dataset[split].iterrows():
-            input_example = InputExample(text_a=row['text'], label=int(row['label']), guid=row['rev_id'])
+            input_example = InputExample(text_a=row['text'], label=int(row['label']), guid=row['id'])
             dataset[split].append(input_example)
 
     eval_dataloader = PromptDataLoader(
@@ -135,7 +137,7 @@ def main(data_dir, n_train, n_eval, eval_set, template, seed, output_dir, model_
         template=promptTemplate,
         tokenizer=tokenizer,
         tokenizer_wrapper_class=WrapperClass,
-        max_seq_length=256,
+        max_seq_length=512,
         batch_size=eval_batch_size,
         shuffle=False,
         teacher_forcing=False,
@@ -150,7 +152,7 @@ def main(data_dir, n_train, n_eval, eval_set, template, seed, output_dir, model_
             template=promptTemplate,
             tokenizer=tokenizer,
             tokenizer_wrapper_class=WrapperClass,
-            max_seq_length=256,
+            max_seq_length=512,
             batch_size=8,
             shuffle=False,
             teacher_forcing=False,
