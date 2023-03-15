@@ -223,7 +223,7 @@ def timestr_to_float(string, separator):
 
 def get_times(model, n_trains, seeds, balanced, dataset, filename_format):
     times = np.zeros((len(seeds), len(n_trains)))
-    for (j, n_train) in enumerate(n_trains):
+    for (j, n_train) in enumerate(n_trains): 
         for (i, seed) in enumerate(seeds):
             key = filename_format.format(model, n_train, balanced, seed)
 
@@ -380,7 +380,7 @@ def plot_roc_curves(task: str,
 def plot_roc_ntrains(task, method, model, n_trains, seeds, balanced, dataset, figsize, color_palette: str = 'mako', filename_format: str = filename_format):
     fig = plt.figure(figsize=figsize)
     plt.axes().set_aspect('equal', 'datalim')
-    plt.plot([0, 1], [0, 1], 'r-')
+    plt.plot([0, 1], [0, 1], 'k--')
 
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.0])
@@ -392,8 +392,9 @@ def plot_roc_ntrains(task, method, model, n_trains, seeds, balanced, dataset, fi
     plt.ylabel('TP rate', size='x-large')
 
     plt.grid(alpha=0.3)
-    plt.title(f"Task: {task}, method: {method}, model: {model}, balanced: {balanced}", size='large')
-
+    #plt.title(f"Task: {task}, method: {method}, model: {model}, balanced: {balanced}", size='large')
+    plt.title(color_palette)
+    
     colors = sns.color_palette(color_palette, len(n_trains))[::-1]
 
     for (j, n_train) in enumerate(n_trains):

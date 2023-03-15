@@ -127,3 +127,11 @@ def get_lfs(path_keywords: str, path_annotations: str) -> dict:
         lfs[name] = lfg_worker(worker_id, worker_dicts)
 
     return lfs
+
+def get_lfs_imdb(treshold_abuse, treshold_notabuse) -> dict:
+    lfs = dict()
+
+    lfs['polarity_negative'] = lfg_polarity(treshold_abuse, '<', ABUSE, name='polarity_negative')
+    lfs['polarity_positive'] = lfg_polarity(treshold_notabuse, '>=', NOT_ABUSE, name='polarity_positive')
+
+    return lfs
