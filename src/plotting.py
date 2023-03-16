@@ -110,6 +110,63 @@ def get_f1_score(model: str,
     return f1_mean, f1_std
 
 
+def get_f1_score_v1(task: str,
+                method: str,
+                model: str, 
+                n_trains: list, 
+                seeds: list,
+                balanced: bool,
+                df,
+                prompt: str = '',
+                average: str = 'macro') -> tuple:
+
+    """
+    returns a tuple of arrays with the means and standard deviations thought to be used to plot the learning curve.
+
+    Args:
+        task: task name
+        method: method name
+        model: model name
+        n_trains: list of training points
+        seeds: list of seeds
+        balanced: boolean indicating if there was a balanced training
+        df: dataframe used to compute f1 scores
+        prompt: prompt name if any
+        average: str of average to be used when computing f1 scores
+        filename_format: high-level string of how files are named
+
+    Returns:
+        tuple of np.arrays
+        f1_mean: mean f1 scores with shape=len(n_trains)
+        f1_std: standard deviation f1 scores with shape=len(n_trains)
+    """
+
+    f1_mean = np.zeros(len(n_trains))
+    f1_std = np.zeros(len(n_trains))
+
+    for (j, n) in enumerate(n_trains):
+        f1_seeds = np.zeros(len(seeds))
+        for (i, seed) in enumerate(seeds):
+            if method == 'weak_supervision':
+                model = 'LabelModel'
+
+            # print(task, type(task))
+            # print(method, type(method))
+            # print(model, type(model))
+            # print(n, type(n))
+
+            sub_df = df[(df['task']==task) & (df['technique']==method) & (df['model']==model) &
+                           (df['n_train']==n) & (df['balanced_train']==balanced) & (df['seed']==seed)]
+            if method == 'prompt_engineering':
+                sub_df = sub_df[(sub_df['template']==prompt)]
+            # print(sub_df)
+            # print(f'For {method}, mod={model}, n={n}, s={seed}, bal={balanced}: F1 = {sub_df["f1"]}')
+            f1_seeds[i] = sub_df['f1']            
+
+        f1_mean[j] = f1_seeds.mean()
+        f1_std[j] = f1_seeds.std()
+    return f1_mean, f1_std
+
 def get_fprs(model: str, 
             n_trains: list, 
             seeds: list,
@@ -207,6 +264,7 @@ def get_mean_std_tprs(tprs: np.array) -> tuple:
     return tprs_mean, tprs_std
 
 def timestr_to_float(string, separator):
+    # print(f'train time: {string}')
     arr_time = string.split(separator)
     num = 0
     
@@ -221,16 +279,47 @@ def timestr_to_float(string, separator):
         
     return num
 
-def get_times(model, n_trains, seeds, balanced, dataset, filename_format):
+def get_times(model, n_trains, seeds, balanced, dataset, filename_format, convert_time):
     times = np.zeros((len(seeds), len(n_trains)))
     for (j, n_train) in enumerate(n_trains): 
         for (i, seed) in enumerate(seeds):
             key = filename_format.format(model, n_train, balanced, seed)
 
             time_str = dataset[key]['train_runtime']
-            time_float = timestr_to_float(time_str, ":")
+            if convert_time:
+                times[i, j] = timestr_to_float(time_str, ":")
+            else:
+                times[i, j] = time_str
 
-            times[i, j] = time_float
+    return times
+
+def get_times_v1(task, method, model, n_trains, seeds, balanced, df, prompt):
+    times = np.zeros((len(seeds), len(n_trains)))
+
+    for (j, n) in enumerate(n_trains):
+        for (i, seed) in enumerate(seeds):
+            if method == 'weak_supervision':
+                model = 'LabelModel'
+
+            # print(task, type(task))
+            # print(method, type(method))
+            # print(model, type(model))
+            # print(n, type(n))
+            # print(seed, type(seed))
+
+            sub_df = df[(df['task']==task) & (df['technique']==method) & (df['model']==model) &
+                           (df['n_train']==n) & (df['balanced_train']==balanced) & (df['seed']==seed)]
+            if method == 'prompt_engineering':
+                sub_df = sub_df[(sub_df['template']==prompt)]
+
+            # print(sub_df)
+            # print(f'For {method}, mod={model}, n={n}, s={seed}, bal={balanced}: train_time = {sub_df["train_runtime"]}, {type(sub_df["train_runtime"])}')
+            time_str = sub_df['train_runtime'].item()
+            if method == 'weak_supervision':
+                time_float = timestr_to_float(time_str, ":")
+                times[i, j] = time_float
+            else:
+                times[i, j] = time_str
 
     return times
 
@@ -335,8 +424,123 @@ def plot_learning_curve(task: str,
         f1_mean_false, f1_std_false = get_f1_score(model, n_trains, seeds, balanced, dataset)
         plot_mean_std(fig, n_trains, f1_mean_false, f1_std_false, fmt, label, alpha)
 
-    plt.legend(fontsize='large')
+    plt.legend(fontsize='large', loc = 'lower right', bbox_to_anchor=(1, 0))
+
+def plot_learning_curve_prompt(task: str,
+                        method: str,
+                        models: list,
+                        n_trains: list,
+                        seeds: list,
+                        balanced: bool,
+                        df,
+                        figsize: tuple,
+                        prompts: list,
+                        temp_short_names: dict,
+                        alpha: float = 0.8,
+                        ):
+
+    fig = plt.figure(figsize=figsize)
+    plt.xticks(size='large')
+    plt.yticks(size='large')
+
+    plt.xlabel('Training points', size='x-large')
+    plt.ylabel('Macro F1 score', size='x-large')
     
+    task_str = task.replace("_", " ")
+    plt.title(f"Task: {task_str}, method: {method}, balanced: {balanced}", size='large')
+
+    plt.grid(alpha=0.3)
+    colors = [('b.-', 'r.-', 'g.-'), ('m.-', 'k.-', 'y.-')]
+
+    for (i, model) in enumerate(models):
+        for (j, prompt) in enumerate(prompts):
+            label = f'Model: {model} - {temp_short_names[prompt]}'
+            fmt = colors[i][j]
+
+            f1_mean_false, f1_std_false = get_f1_score_v1(task, method, model, n_trains, seeds, balanced, df, prompt)
+            plot_mean_std(fig, n_trains, f1_mean_false, f1_std_false, fmt, label, alpha)
+
+    plt.legend(fontsize='large', loc = 'lower right', bbox_to_anchor=(1, 0))
+
+def plot_learning_curve_all(task: str,
+                        methods: list,
+                        models,
+                        n_trains: list,
+                        seeds: list,
+                        df,
+                        figsize: tuple,
+                        prompt: str = '',
+                        alpha: float = 0.8,
+                        ):
+    
+    fig = plt.figure(figsize=figsize)
+    plt.xticks(size='large')
+    plt.yticks(size='large')
+
+    plt.xlabel('Training points', size='x-large')
+    plt.ylabel('Macro F1 score', size='x-large')
+    
+    task_str = task.replace("_", " ")
+    plt.title(f"Task: {task_str}", size='large')
+
+    plt.grid(alpha=0.3)
+    colors = [('b.-', 'r.-'), ('g.-', 'm.-'), ('k.-', 'y.-')]
+
+    for (i, method) in enumerate(methods):
+        method_str = method.replace("_", " ")
+        for (j, model) in enumerate(models):
+            balanced = True
+            label = f'{method_str} - balanced'
+            fmt = colors[i][0]
+            # print(f'{method}:, bal={balanced}: df = {len(df)}')
+            f1_mean_true, f1_std_true = get_f1_score_v1(task, method, model, n_trains, seeds, balanced, df, prompt)
+            plot_mean_std(fig, n_trains, f1_mean_true, f1_std_true, fmt, label, alpha)
+        
+            balanced = False
+            label = f'{method_str} - not balanced'
+            fmt = colors[i][1]
+
+            f1_mean_false, f1_std_false = get_f1_score_v1(task, method, model, n_trains, seeds, balanced, df, prompt)
+            plot_mean_std(fig, n_trains, f1_mean_false, f1_std_false, fmt, label, alpha)
+
+    plt.legend(fontsize='large', loc = 'lower right', bbox_to_anchor=(1, 0))
+
+def plot_learning_curve_balanced(task: str,
+                        methods: list,
+                        models,
+                        n_trains: list,
+                        seeds: list,
+                        balanced: bool,
+                        df,
+                        figsize: tuple,
+                        prompt: str = '',
+                        alpha: float = 0.8,
+                        ):
+    
+    fig = plt.figure(figsize=figsize)
+    plt.xticks(size='large')
+    plt.yticks(size='large')
+
+    plt.xlabel('Training points', size='x-large')
+    plt.ylabel('Macro F1 score', size='x-large')
+    
+    task_str = task.replace("_", " ")
+    plt.title(f"Task: {task_str}, balanced: {balanced}", size='large')
+
+    plt.grid(alpha=0.3)
+    colors = [('b.-', 'r.-'), ('g.-', 'm.-'), ('k.-', 'y.-')]
+
+    for (i, method) in enumerate(methods):
+        method_str = method.replace("_", " ")
+        for (j, model) in enumerate(models):
+            label = f'{method_str} - {balanced}'
+            fmt = colors[i][0]
+            # print(f'{method}:, bal={balanced}: df = {len(df)}')
+            f1_mean_true, f1_std_true = get_f1_score_v1(task, method, model, n_trains, seeds, balanced, df, prompt)
+            plot_mean_std(fig, n_trains, f1_mean_true, f1_std_true, fmt, label, alpha)
+
+    plt.legend(fontsize='large', loc = 'lower right', bbox_to_anchor=(1, 0))
+
 def plot_roc_curves(task: str,
                     model: str,
                     n_trains: list,
@@ -414,7 +618,7 @@ def plot_roc_ntrains(task, method, model, n_trains, seeds, balanced, dataset, fi
     plt.legend(fontsize='x-large', title='Training points')
 
 
-def plot_times(task, method, models, n_trains, seeds, balanced, dataset, figsize, alpha: float = 0.8, filename_format: str = filename_format):
+def plot_times(task, method, models, n_trains, seeds, balanced, dataset, figsize, alpha: float = 0.8, filename_format: str = filename_format, convert_time=True):
 
     fig = define_figure_plots(figsize, 'Training time')
     colors = [('b', 'r'), ('g', 'm')]
@@ -427,8 +631,8 @@ def plot_times(task, method, models, n_trains, seeds, balanced, dataset, figsize
 
 
     for (i, model) in enumerate(models):    
-        times_balanced = get_times(model, n_trains, seeds, True, dataset, filename_format)
-        times_notbalanced = get_times(model, n_trains, seeds, False, dataset, filename_format)
+        times_balanced = get_times(model, n_trains, seeds, True, dataset, filename_format, convert_time)
+        times_notbalanced = get_times(model, n_trains, seeds, False, dataset, filename_format, convert_time)
 
         label = f'{model} - balanced'
         plt.plot(n_trains, times_balanced.mean(axis=0), colors[i][0]+'.-', alpha=alpha, label=label, figure=fig)
@@ -444,5 +648,83 @@ def plot_times(task, method, models, n_trains, seeds, balanced, dataset, figsize
 
     plt.legend(fontsize='large')
 
+def plot_times_prompt(task, method, models, n_trains, seeds, balanced, df, figsize, prompts, temp_short_names, alpha: float = 0.8):
 
+    fig = define_figure_plots(figsize, 'Training time')
+    colors = [('b.-', 'r.-', 'g.-'), ('m.-', 'k.-', 'y.-')]
 
+    alpha_fill = alpha-0.5
+
+    task_str = task.replace('_', ' ')
+    plt.title(f"Task: {task_str}, method: {method}, balanced: {balanced}", size='large')
+
+    for (i, model) in enumerate(models):
+        for (j, prompt) in enumerate(prompts):
+            label = f'Model: {model} - {temp_short_names[prompt]}'
+            fmt = colors[i][j]
+
+            times_balanced = get_times_v1(task, method, model, n_trains, seeds, balanced, df, prompt)
+            plt.plot(n_trains, times_balanced.mean(axis=0), fmt, alpha=alpha, label=label, figure=fig)
+            plt.fill_between(n_trains, times_balanced.mean(axis=0)-times_balanced.std(axis=0), 
+                        times_balanced.mean(axis=0)+times_balanced.std(axis=0), 
+                        color=fmt[0], alpha=alpha_fill, figure=fig)
+    plt.legend(fontsize='large')
+
+def plot_times_all(task, methods, models, n_trains, seeds, df, figsize, prompt, alpha: float = 0.8):
+
+    fig = define_figure_plots(figsize, 'Training time')
+    colors = [('b.-', 'r.-'), ('g.-', 'm.-'), ('k.-', 'y.-')]
+
+    alpha_fill = alpha-0.5
+
+    task_str = task.replace('_', ' ')
+    plt.title(f"Task: {task_str}", size='large')
+
+    for (i, method) in enumerate(methods):
+        method_str = method.replace("_", " ")
+        for (j, model) in enumerate(models):
+            balanced = True
+            label = f'{method_str} - balanced'
+            fmt = colors[i][0]
+
+            times_balanced = get_times_v1(task, method, model, n_trains, seeds, balanced, df, prompt)
+            plt.plot(n_trains, times_balanced.mean(axis=0), fmt, alpha=alpha, label=label, figure=fig)
+            plt.fill_between(n_trains, times_balanced.mean(axis=0)-times_balanced.std(axis=0), 
+                        times_balanced.mean(axis=0)+times_balanced.std(axis=0), 
+                        color=fmt[0], alpha=alpha_fill, figure=fig)    
+        
+            balanced = False
+            label = f'{method_str} - not balanced'
+            fmt = colors[i][1]
+
+            times_notbalanced = get_times_v1(task, method, model, n_trains, seeds, balanced, df, prompt)
+            plt.plot(n_trains, times_notbalanced.mean(axis=0), fmt, alpha=alpha_fill+0.5, label=label, figure=fig)
+            plt.fill_between(n_trains, times_notbalanced.mean(axis=0)-times_notbalanced.std(axis=0), 
+                        times_notbalanced.mean(axis=0)+times_notbalanced.std(axis=0), 
+                        color=fmt[0], alpha=alpha_fill, figure=fig)
+
+    plt.legend(fontsize='large')
+
+def plot_times_balanced(task, methods, models, n_trains, seeds, balanced, df, figsize, prompt, alpha: float = 0.8):
+
+    fig = define_figure_plots(figsize, 'Training time')
+    colors = [('b.-', 'r.-'), ('g.-', 'm.-'), ('k.-', 'y.-')]
+
+    alpha_fill = alpha-0.5
+
+    task_str = task.replace('_', ' ')
+    plt.title(f"Task: {task_str}, balanced: {balanced}", size='large')
+
+    for (i, method) in enumerate(methods):
+        method_str = method.replace("_", " ")
+        for (j, model) in enumerate(models):
+            label = f'{method_str} - {balanced}'
+            fmt = colors[i][0]
+
+            times_balanced = get_times_v1(task, method, model, n_trains, seeds, balanced, df, prompt)
+            plt.plot(n_trains, times_balanced.mean(axis=0), fmt, alpha=alpha, label=label, figure=fig)
+            plt.fill_between(n_trains, times_balanced.mean(axis=0)-times_balanced.std(axis=0), 
+                        times_balanced.mean(axis=0)+times_balanced.std(axis=0), 
+                        color=fmt[0], alpha=alpha_fill, figure=fig)    
+
+    plt.legend(fontsize='large')
