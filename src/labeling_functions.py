@@ -1,6 +1,9 @@
 import pandas as pd
 import datetime as dt
+import numpy as np
 import re
+
+from nltk.corpus import wordnet
 
 from snorkel.labeling import LabelingFunction, labeling_function
 from snorkel.preprocess import preprocessor
@@ -30,16 +33,27 @@ def textblob_subjectivity(x):
     return x
 
 ### NLP labeling functions
-def lfg_polarity(bound: float,
-                          operator: str,
-                          CONSTANT: int,
-                          name: str = 'polarityLabelingFunction',
-                          ABSTAIN: int = -1
-                        ):
+def lfg_polarity(operator: str,
+                bound: float,                  
+                CONSTANT: int,
+                name: str = 'polarityLabelingFunction',
+                ABSTAIN: int = -1
+                ):
     def lf_polarity(x):
         condition = eval(f"{x.polarity}"+operator+f"{bound}")
         return CONSTANT if condition else ABSTAIN
     return LabelingFunction(name=name, f=lf_polarity, pre=[textblob_polarity])
+
+def lfg_subjectivity(operator: str,
+                    bound: float,
+                    CONSTANT: int,
+                    name: str = 'subjectivityLabelingFunction',
+                    ABSTAIN: int = -1,
+                    ):
+    def lf_subjectivity(x):
+        condition = eval(f"{x.subjectivity}"+operator+f"{bound}")
+        return CONSTANT if condition else ABSTAIN
+    return LabelingFunction(name=name, f=lf_subjectivity, pre=[textblob_subjectivity])
     
 
 ### Heuristic labeling functions ###
@@ -128,10 +142,36 @@ def get_lfs(path_keywords: str, path_annotations: str) -> dict:
 
     return lfs
 
-def get_lfs_imdb(treshold_abuse, treshold_notabuse) -> dict:
+
+badwords = []
+for word in ['bad', 'worst', 'horrible', 'ridiculous', 'appaling', 'long', 'boring', 
+             'predictable', 'tiring', 'non-credible']:
+    for syn in wordnet.synsets(word):
+        for i in syn.lemmas():
+             badwords.append(i.name())
+                
+badwords = [s.lower().replace('_', ' ') for s in np.unique(np.array(badwords))]
+
+goodwords = []
+for word in ['good', 'best', 'marvelous', 'incredible', 'mesmerizing', 'entertaining', 
+             'unforgettable', 'beautiful', 'cute', 'deep']:
+    for syn in wordnet.synsets(word):
+        for i in syn.lemmas():
+             goodwords.append(i.name())
+                
+goodwords = [s.lower().replace('_', ' ') for s in np.unique(np.array(goodwords))]
+
+
+# for binary_movie sentiment, labels are inverted
+def get_lfs_imdb(treshold_abuse: float = -0.05, treshold_notabuse: float = 0., treshold_subjectivity: float = 0.3) -> dict:
     lfs = dict()
 
-    lfs['polarity_negative'] = lfg_polarity(treshold_abuse, '<', ABUSE, name='polarity_negative')
-    lfs['polarity_positive'] = lfg_polarity(treshold_notabuse, '>=', NOT_ABUSE, name='polarity_positive')
+    lfs['polarity_negative'] = lfg_polarity('<', treshold_abuse, NOT_ABUSE, name='polarity_negative')
+    lfs['polarity_positive'] = lfg_polarity('>=', treshold_notabuse, ABUSE, name='polarity_positive')
+
+    lfs['subjectivity'] = lfg_subjectivity('<', treshold_subjectivity, ABUSE, name='subjectivity')
+
+    lfs['badwords'] = lfg_keywords(badwords, NOT_ABUSE, name='badwords')
+    lfs['goodwords'] = lfg_keywords(goodwords, ABUSE, name='goodwords')
 
     return lfs

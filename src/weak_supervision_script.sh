@@ -6,6 +6,9 @@ export KEYWORDS=keywords.csv
 
 echo "weak labeling: serialised training with different training size"
 
+python src/weak_supervision.py --n_train 2 --balanced_train --task $TASK --filename_annotations $ANNOTATIONS --filename_keywords $KEYWORDS
+python src/weak_supervision.py --n_train 2 --no-balanced_train --task $TASK --filename_annotations $ANNOTATIONS --filename_keywords $KEYWORDS
+
 python src/weak_supervision.py --n_train 16 --balanced_train --task $TASK --filename_annotations $ANNOTATIONS --filename_keywords $KEYWORDS
 python src/weak_supervision.py --n_train 16 --no-balanced_train --task $TASK --filename_annotations $ANNOTATIONS --filename_keywords $KEYWORDS
 

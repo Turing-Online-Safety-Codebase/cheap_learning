@@ -8,7 +8,7 @@ from snorkel.labeling.model.label_model import LabelModel
 
 from helper_functions import check_dir_exists, convert_labels, load_balanced_n_samples, load_n_samples
 from evaluation import get_results_dict, save_results
-from labeling_functions import get_lfs
+from labeling_functions import get_lfs, get_lfs_imdb
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +25,8 @@ def parse_args():
 
     parser.add_argument('--model_name', type=str, default='LabelModel', help='name of the model')
     parser.add_argument('--task', type=str, help='target task')
-    parser.add_argument('--filename_annotations', type=str, help='filename of annotations csv')
-    parser.add_argument('--filename_keywords', type=str, help='filename of keywords csv')
+    parser.add_argument('--filename_annotations', default='', type=str, help='filename of annotations csv')
+    parser.add_argument('--filename_keywords', default='', type=str, help='filename of keywords csv')
     parser.add_argument('--tie_break_policy', type=str, default='random', help='Tie break policy for predicting labels (random vs abstain)')
     pars_args = parser.parse_args()
 
@@ -106,10 +106,16 @@ def main(
         logger.info(f"--label distribution for {split} set--\n{raw_data[split]['label'].value_counts()}")
     
     ### Preprocess data
-    dataset = prepare_dataset(raw_data)
+    if TASK == 'binary_abuse': 
+        dataset = prepare_dataset(raw_data)
+    else:
+        dataset = raw_data.copy()
 
     ### Labeling functions
-    labeling_functions = get_lfs(path_keywords, path_annotations)
+    if TASK == 'binary_abuse':
+        labeling_functions = get_lfs(path_keywords, path_annotations)
+    else: 
+        labeling_functions = get_lfs_imdb()
 
     ### Train model
     logger.info("--Model Training--")
