@@ -122,16 +122,17 @@ def main(
     lfs = [item[1] for item in labeling_functions.items()]
 
     applier = PandasLFApplier(lfs=lfs)
+    
+    xstart = dt.datetime.now()
     L_train = applier.apply(df=dataset['train'])
-    L_eval = applier.apply(df=dataset['eval'])
-
+    
     label_model = LabelModel(cardinality=n_classes_train, verbose=False)
     Y_eval = dataset['eval'].label.values
 
-   
-    start = dt.datetime.now()
     label_model.fit(L_train=L_train, n_epochs=100, log_freq=10, seed=seed)
     end = dt.datetime.now()
+
+    L_eval = applier.apply(df=dataset['eval'])
 
     ### Model evaluation
     logger.info("--Model Evaluation--")

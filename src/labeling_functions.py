@@ -161,6 +161,21 @@ for word in ['good', 'best', 'marvelous', 'incredible', 'mesmerizing', 'entertai
                 
 goodwords = [s.lower().replace('_', ' ') for s in np.unique(np.array(goodwords))]
 
+def lfg_regex(keywords, 
+               CONSTANT: int, 
+               name: str = 'regexLabelingFunction',
+               specific_keywords = ['act', 'sound', 'edit', 'direct', 'film', 'picture'],
+               ABSTAIN: int = -1):
+    
+    @labeling_function()
+    def func(x):
+        for word in specific_keywords:
+            for keyword in keywords:
+                if re.search(f"({keyword}|{word})"+"\W+(?:\w+\W+){0,2}?"+f"({keyword}|{word})", x.text.lower(), flags=re.I):
+                    return CONSTANT 
+        return ABSTAIN
+    func.name = name
+    return func
 
 # for binary_movie sentiment, labels are inverted
 def get_lfs_imdb(treshold_abuse: float = -0.05, treshold_notabuse: float = 0., treshold_subjectivity: float = 0.3) -> dict:
@@ -173,5 +188,8 @@ def get_lfs_imdb(treshold_abuse: float = -0.05, treshold_notabuse: float = 0., t
 
     lfs['badwords'] = lfg_keywords(badwords, NOT_ABUSE, name='badwords')
     lfs['goodwords'] = lfg_keywords(goodwords, ABUSE, name='goodwords')
+
+    lfs['good_acting'] = lfg_regex(goodwords, NOT_ABUSE, name='good_acting')
+    lfs['bad_acting'] = lfg_regex(badwords, ABUSE, name='bad_acting')
 
     return lfs
