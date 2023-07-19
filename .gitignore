@@ -1,13 +1,15 @@
 venv/
 .venv/
-
 .DS_Store/
 **/.DS_Store
-
 __pycache__/
 **/__pycache__
-
 .vscode/
-
 # this file is too big for github
-data/binary_movie_sentiment/clean_data/binary_movie_sentiment.csv 
+data/binary_movie_sentiment/clean_data/binary_movie_sentiment.csv
+.Rproj.user
+.Rhistory
+cheap_learning.Rproj
+
+results/binary_abuse/ero_shot_prompt_engineering/
+
