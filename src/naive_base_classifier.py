@@ -60,8 +60,12 @@ def main(data_dir, n_train, n_eval, eval_set, seed, output_dir, model_name, bala
 
     # Build the model
     model = make_pipeline(TfidfVectorizer(), MultinomialNB())
+
+    start = time.time()
     # Train the model using the training data
     model.fit(raw_dataset['train']['text'], raw_dataset['train']['label'])
+    end = time.time()
+    run_time = end - start
     
     # Inference and evalute
     logger.info("--Model Evaluation--")
