@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 """
-Runs Prompt engineering experiments.
+Runs Naive bayes experiments.
 """
 
 import os
@@ -53,7 +53,11 @@ def main(data_dir, n_train, n_eval, eval_set, seed, output_dir, model_name, bala
     # Prepare dataset
     raw_dataset = {}
     if balanced_train is False:
-        raw_dataset['train'], n_classes_train = convert_labels(load_n_samples(data_dir, TASK, 'train', n_train))
+        if TASK == 'binary_movie_sentiment' :
+            df = pd.read_csv(f'{data_dir}/{TASK}/unbalanced_data/{TASK}_train.csv', nrows =  n_train)
+            raw_dataset['train'], n_classes_train = convert_labels(df)
+        else:
+            raw_dataset['train'], n_classes_train = convert_labels(load_n_samples(data_dir, TASK, 'train', n_train))
     else:
         raw_dataset['train'], n_classes_train = convert_labels(load_balanced_n_samples(data_dir, TASK, 'train', n_train))
     raw_dataset['eval'], n_classes_eval = convert_labels(load_n_samples(data_dir, TASK, eval_set, n_eval))
