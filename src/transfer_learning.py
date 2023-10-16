@@ -10,6 +10,7 @@ import os
 from datetime import datetime
 import logging
 import numpy as np
+import pandas as pd
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer, pipeline
 from datasets import Dataset, DatasetDict
 from evaluation import get_results_dict, save_results
@@ -76,7 +77,11 @@ def main(SEED, TASK, TECH, data_dir, output_dir, n_train, balanced_train, eval_s
 
     # Load data
     if balanced_train is False:
-        train_df, n_classes_train = convert_labels(load_n_samples(data_dir, TASK, "train", n_train)) 
+        if TASK == 'binary_movie_sentiment' :
+            df = pd.read_csv(f'{data_dir}/{TASK}/unbalanced_data/{TASK}_train.csv', nrows =  n_train)
+            train_df, n_classes_train = convert_labels(df)
+        else:
+            train_df, n_classes_train = convert_labels(load_n_samples(data_dir, TASK, "train", n_train)) 
     else:
         train_df, n_classes_train = convert_labels(load_balanced_n_samples(data_dir, TASK, "train", n_train))
     eval_df, n_classes_eval = convert_labels(load_n_samples(data_dir, TASK, eval_set, n_eval))
