@@ -12,7 +12,7 @@ from sklearn.metrics import (
     recall_score,
     confusion_matrix,
     classification_report,
-    )
+)
 from helper_functions import check_dir_exists
 
 # # example
@@ -20,6 +20,7 @@ from helper_functions import check_dir_exists
 # y_pred = [1, 1, 0, 0]
 # result = evaluate(y_true, y_pred)
 # print(result)
+
 
 def evaluate(true, pred, target_names=["not_hateful", "hateful"]):
     """Computes the number of votes received for each class labelled for an entry.
@@ -33,18 +34,27 @@ def evaluate(true, pred, target_names=["not_hateful", "hateful"]):
         and confusion metric
     """
     results = {}
-    results['eval_accuracy'] = accuracy_score(true, pred)
-    results['eval_precision'] = precision_score(true, pred, average='weighted', zero_division=0)
-    results['eval_recall'] = recall_score(true, pred, average='weighted', zero_division=0)
-    results['eval_f1'] = f1_score(true, pred, average='weighted', zero_division=0)
-    print(f'--confusion metric-- \n {confusion_matrix(true, pred)}')
-    results['eval_cm (tn, fp, fn, tp)'] = confusion_matrix(true, pred, normalize='true').ravel().tolist()
+    results["eval_accuracy"] = accuracy_score(true, pred)
+    results["eval_precision"] = precision_score(
+        true, pred, average="weighted", zero_division=0
+    )
+    results["eval_recall"] = recall_score(
+        true, pred, average="weighted", zero_division=0
+    )
+    results["eval_f1"] = f1_score(true, pred, average="weighted", zero_division=0)
+    print(f"--confusion metric-- \n {confusion_matrix(true, pred)}")
+    results["eval_cm (tn, fp, fn, tp)"] = (
+        confusion_matrix(true, pred, normalize="true").ravel().tolist()
+    )
     print("\n--full report--")
-    print(classification_report(true, pred, output_dict=False, target_names=target_names))
+    print(
+        classification_report(true, pred, output_dict=False, target_names=target_names)
+    )
     return results
 
+
 def evaluate_dataframe(s):
-    """Function to be applied to dataframe with prediction lists as columns. 
+    """Function to be applied to dataframe with prediction lists as columns.
     E.g. results_df[['acc', 'f1', 'prec', 'recall']] = results_df.apply(evaluate_dataframe, axis=1, result_type="expand")
 
     Args:
@@ -53,20 +63,31 @@ def evaluate_dataframe(s):
     Returns:
         float: list of floats for eval scores.
     """
-    true = s['eval_true']
-    pred = s['eval_pred']
+    true = s["eval_true"]
+    pred = s["eval_pred"]
     acc = accuracy_score(true, pred)
-    f1 = f1_score(true, pred, average='macro', zero_division=0)
-    prec = precision_score(true, pred, average='weighted', zero_division=0)
-    recall = recall_score(true, pred, average='weighted', zero_division=0)
-    return acc,f1, prec, recall
+    f1 = f1_score(true, pred, average="macro", zero_division=0)
+    prec = precision_score(true, pred, average="weighted", zero_division=0)
+    recall = recall_score(true, pred, average="weighted", zero_division=0)
+    return acc, f1, prec, recall
 
 
-def get_results_dict(task, technique, 
-                    model_name, runtime,
-                      eval_true, eval_pred, eval_set,
-                      n_train, n_eval, balanced_train, 
-                      seed, datetime_str, template=''):
+def get_results_dict(
+    task,
+    technique,
+    model_name,
+    runtime,
+    eval_true,
+    eval_pred,
+    eval_set,
+    n_train,
+    n_eval,
+    balanced_train,
+    balanced_eval,
+    seed,
+    datetime_str,
+    template="",
+):
     """Standardizes results dictionary.
 
     Args:
@@ -88,20 +109,25 @@ def get_results_dict(task, technique,
         dict: Dictionary of results.
     """
     results_dict = {}
-    results_dict['task'] = task
-    results_dict['technique'] = technique
-    results_dict['model'] = model_name
-    results_dict['train_runtime'] = runtime
-    results_dict['n_train'] = n_train
-    results_dict['n_eval'] = n_eval
-    results_dict['eval_set'] = eval_set
-    results_dict['balanced_train'] = balanced_train
-    results_dict['datetime'] = datetime_str
-    results_dict['eval_true'] = eval_true if type(eval_true) == list else eval_true.tolist() 
-    results_dict['eval_pred'] = eval_pred if type(eval_pred) == list else eval_pred.tolist() 
-    results_dict['seed'] = seed
-    if technique == 'prompt_engineering':
-        results_dict['template'] = template
+    results_dict["task"] = task
+    results_dict["technique"] = technique
+    results_dict["model"] = model_name
+    results_dict["train_runtime"] = runtime
+    results_dict["n_train"] = n_train
+    results_dict["n_eval"] = n_eval
+    results_dict["eval_set"] = eval_set
+    results_dict["balanced_train"] = balanced_train
+    results_dict["balanced_eval"] = balanced_eval
+    results_dict["datetime"] = datetime_str
+    results_dict["eval_true"] = (
+        eval_true if type(eval_true) == list else eval_true.tolist()
+    )
+    results_dict["eval_pred"] = (
+        eval_pred if type(eval_pred) == list else eval_pred.tolist()
+    )
+    results_dict["seed"] = seed
+    if technique == "prompt_engineering":
+        results_dict["template"] = template
     return results_dict
 
 
@@ -114,5 +140,5 @@ def save_results(output_dir, save_str, results_dict):
         results_dict (dict): Dictionary of results
     """
     check_dir_exists(output_dir)
-    with open(f'{output_dir}/{save_str}.json', 'w', encoding="utf-8") as file:
+    with open(f"{output_dir}/{save_str}.json", "w", encoding="utf-8") as file:
         json.dump(results_dict, file)
