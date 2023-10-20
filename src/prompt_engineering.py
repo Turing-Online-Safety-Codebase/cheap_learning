@@ -28,6 +28,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Prompt learning")
     parser.add_argument('--task', type=str, default='binary_abuse', help = 'name of task')
     parser.add_argument('--prompt', type=str, default='{"placeholder":"text_a"} It was? {"mask"}', help = 'prompt')
+    parser.add_argument('--prompt_id', type=str, default='Prompt1', help = 'prompt id indicating the folder to store results')
     parser.add_argument('--n_train', type=int, default=16, help='num of training points tested (seperated by ",", e.g., "15,20")')
     parser.add_argument('--n_eval', type=int, default=-1, help='num of eval entries. Set to -1 to take all entries.')
     parser.add_argument('--eval_set', type=str, default="dev_sample", help='name of eval set')
@@ -35,6 +36,7 @@ def parse_args():
     parser.add_argument('--model_path', type=str, default='bert-base-cased', help='path to the model')
     parser.add_argument('--use_cuda', action='store_false', help='If using cuda. Default to True')
     parser.add_argument('--balanced_train', action='store_true', help='If training entries are balanced by class label. Default to False.')
+    parser.add_argument('--balanced_eval', action='store_true', help='If test entries are balanced by class label. Default to False.')
     parser.add_argument('--eval_batch_size', type=int, default=128, help='num of examples evaluated at once')
     pars_args = parser.parse_args()
 
@@ -43,7 +45,7 @@ def parse_args():
         print(f"{arg} is {getattr(pars_args, arg)}")
     return pars_args
 
-def main(data_dir, n_train, n_eval, eval_set, template, seed, output_dir, model_name, model_path, balanced_train, use_cuda, eval_batch_size):
+def main(data_dir, n_train, n_eval, eval_set, template, seed, output_dir, model_name, model_path, balanced_train, use_cuda, eval_batch_size, balanced_eval):
     datetime_str = str(datetime.datetime.now())
 
     set_seed(seed)
@@ -116,7 +118,7 @@ def main(data_dir, n_train, n_eval, eval_set, template, seed, output_dir, model_
         results = evaluate(gold_labels, preds)
         return gold_labels, preds, results
 
-    # Prepare dataset
+    # Prepare train dataset
     raw_dataset = {}
     if balanced_train is False:
         if TASK == 'binary_movie_sentiment' :
@@ -190,10 +192,10 @@ def main(data_dir, n_train, n_eval, eval_set, template, seed, output_dir, model_
     datetime_str = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     results_dict = get_results_dict(TASK, TECH, model_name, run_time,
                     eval_gold_labels, eval_preds, eval_set,
-                    n_train, n_eval, balanced_train, seed, datetime_str, template)
+                    n_train, n_eval, balanced_train, balanced_eval, seed, datetime_str, template)
     # add test_result to results_dict
     results_dict.update(eval_result)
-    save_str = f'mod={model_name}_n={n_train}_bal={balanced_train}_s={seed}'
+    save_str = f'mod={model_name}_n={n_train}_bal={balanced_train}_s={seed}_balEval={balanced_eval}'
     save_results(output_dir, save_str, results_dict)
 
 if __name__ == '__main__':
@@ -202,11 +204,12 @@ if __name__ == '__main__':
     # Set global vars
     TECH = 'prompt_engineering'
     TASK = args.task
+    PROMPT_ID = args.prompt_id
 
     # Set dirs
     main_dir = os.getcwd()
     data_dir = f"data"
-    output_dir = f'results/{TASK}/{TECH}'
+    output_dir = f'results/{TASK}/{TECH}/{PROMPT_ID}'
 
     # prompt_list = ['{"placeholder":"text_a"} Is this text abusive? {"mask"}', 
     #              '{"placeholder":"text_a"} Does this text contain abuse? {"mask"}',
@@ -216,4 +219,4 @@ if __name__ == '__main__':
     # Run for multiple training batch sizes and multiple seeds
     for SEED in [1, 2, 3]:
         print(f'RUNNING for SEED={SEED}')
-        main(data_dir, args.n_train, args.n_eval, args.eval_set, args.prompt, SEED, output_dir, args.model_name, args.model_path, args.balanced_train, args.use_cuda, args.eval_batch_size)
+        main(data_dir, args.n_train, args.n_eval, args.eval_set, args.prompt, SEED, output_dir, args.model_name, args.model_path, args.balanced_train, args.use_cuda, args.eval_batch_size, args.balanced_eval)

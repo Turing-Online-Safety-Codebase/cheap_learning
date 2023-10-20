@@ -22,6 +22,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Transfer learning")
     parser.add_argument('--n_train', type=int, default=16, help='num of training entries')
     parser.add_argument('--balanced_train', type=bool, action=argparse.BooleanOptionalAction, help='if training entries are balanced by class label')
+    parser.add_argument('--balanced_eval', type=bool, action=argparse.BooleanOptionalAction, help='if testing entries are balanced by class label')
     parser.add_argument('--eval_set', type=str, default="dev_sample", help='name of eval set')
     parser.add_argument('--n_eval', type=int, default=-1, help='num of eval entries. Set to -1 to take all entries.')
     parser.add_argument('--model_name', type=str, default='bert', help='name of the model')
@@ -63,7 +64,7 @@ def get_runtime(train_output):
     metrics = train_output.metrics
     return metrics['train_runtime']
 
-def main(SEED, TASK, TECH, data_dir, output_dir, n_train, balanced_train, eval_set, n_eval, model_name):
+def main(SEED, TASK, TECH, data_dir, output_dir, n_train, balanced_train, eval_set, n_eval, model_name, balanced_eval):
     datetime_str = str(datetime.now())
 
     # Setup logging
@@ -100,7 +101,7 @@ def main(SEED, TASK, TECH, data_dir, output_dir, n_train, balanced_train, eval_s
     logger.info("--Tokenization--")
     tokenizer= AutoTokenizer.from_pretrained(model_name)
     def tokenize_function(examples):
-        return tokenizer(examples["text"], padding="max_length", truncation=True, max_length=128)
+        return tokenizer(examples["text"], padding="max_length", truncation=True, max_length=512)
     tokenized_datasets = dataset.map(tokenize_function, batched=True)
 
     model = AutoModelForSequenceClassification.from_pretrained(model_name, num_labels=n_classes)
@@ -132,11 +133,11 @@ def main(SEED, TASK, TECH, data_dir, output_dir, n_train, balanced_train, eval_s
     results_dict = get_results_dict(TASK, TECH, 
                                     model_name, runtime,
                                     eval_true, eval_pred, eval_set,
-                                    n_train, n_eval, balanced_train, 
+                                    n_train, n_eval, balanced_train, balanced_eval,
                                     SEED, datetime_str)
     # Save output
     model_name = model_name.split('/')[1] if '/' in model_name else model_name
-    save_str = f'mod={model_name}_n={n_train}_bal={balanced_train}_s={SEED}'
+    save_str = f'mod={model_name}_n={n_train}_bal={balanced_train}_s={SEED}_balEval={balanced_eval}'
     save_results(output_dir, save_str, results_dict)
 
 if __name__ == '__main__':
@@ -154,4 +155,4 @@ if __name__ == '__main__':
     # Run for multiple training batch sizes and multiple seeds
     for SEED in [1,2,3]:
         print(f'RUNNING for SEED={SEED}')
-        main(SEED, TASK, TECH, data_dir, output_dir, args.n_train, args.balanced_train, args.eval_set, args.n_eval, args.model_name)
+        main(SEED, TASK, TECH, data_dir, output_dir, args.n_train, args.balanced_train, args.eval_set, args.n_eval, args.model_name, args.balanced_eval)
