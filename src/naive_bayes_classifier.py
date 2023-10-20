@@ -23,13 +23,14 @@ from helper_functions import check_dir_exists, load_n_samples, load_balanced_n_s
 logger = logging.getLogger(__name__)
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Prompt learning")
+    parser = argparse.ArgumentParser(description="Naive bayes")
     parser.add_argument('--task', type=str, default='binary_abuse', help = 'name of task')
     parser.add_argument('--n_train', type=int, default=16, help='num of training points tested (seperated by ",", e.g., "15,20")')
     parser.add_argument('--n_eval', type=int, default=-1, help='num of eval entries. Set to -1 to take all entries.')
     parser.add_argument('--eval_set', type=str, default="dev_sample", help='name of eval set')
     parser.add_argument('--model_name', type=str, default='NB', help='name of the model')
     parser.add_argument('--balanced_train', action='store_true', help='If training entries are balanced by class label. Default to False.')
+    parser.add_argument('--balanced_eval', action='store_true', help='If test entries are balanced by class label. Default to False.')
     pars_args = parser.parse_args()
 
     print("the inputs are:")
@@ -37,7 +38,7 @@ def parse_args():
         print(f"{arg} is {getattr(pars_args, arg)}")
     return pars_args
 
-def main(data_dir, n_train, n_eval, eval_set, seed, output_dir, model_name, balanced_train):
+def main(data_dir, n_train, n_eval, eval_set, seed, output_dir, model_name, balanced_train, balanced_eval):
     datetime_str = str(datetime.datetime.now())
 
     # Setup logging
@@ -47,7 +48,7 @@ def main(data_dir, n_train, n_eval, eval_set, seed, output_dir, model_name, bala
     handler = logging.FileHandler(f"{log_dir}/{datetime_str}.log")
     logger.addHandler(handler)
 
-    # Measure training run time, run_time will be 0 if n_train = 0 (i.e. no training)
+    # Measure training run time
     run_time = 0
 
     # Prepare dataset
@@ -78,10 +79,10 @@ def main(data_dir, n_train, n_eval, eval_set, seed, output_dir, model_name, bala
     datetime_str = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
     results_dict = get_results_dict(TASK, TECH, model_name, run_time,
                     raw_dataset['eval']['label'], predicted_labels, eval_set,
-                    n_train, n_eval, balanced_train, seed, datetime_str)
+                    n_train, n_eval, balanced_train, balanced_eval, seed, datetime_str)
     
     # save results
-    save_str = f'mod={model_name}_n={n_train}_bal={balanced_train}_s={seed}'
+    save_str = f'mod={model_name}_n={n_train}_bal={balanced_train}_s={seed}_balEval={balanced_eval}'
     save_results(output_dir, save_str, results_dict)
 
 if __name__ == '__main__':
@@ -99,4 +100,4 @@ if __name__ == '__main__':
     # Run for multiple training batch sizes and multiple seeds
     for SEED in [1,2,3]:
         print(f'RUNNING for SEED={SEED}')
-        main(data_dir, args.n_train, args.n_eval, args.eval_set, SEED, output_dir, args.model_name, args.balanced_train)
+        main(data_dir, args.n_train, args.n_eval, args.eval_set, SEED, output_dir, args.model_name, args.balanced_train, args.balanced_eval)
