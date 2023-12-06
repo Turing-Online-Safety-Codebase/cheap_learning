@@ -32,4 +32,16 @@ Step 1: Locate local github folder `cd $PATH$` e.g. `Documents/Local_Github/chea
 Step 2: Create conda environment `conda env create -f environment.yaml`
 
 
+### Training data with a certain technique 
 
+If training with Naive Bayes: `bash ./src/naive_bayes_train_script.sh`
+
+If training with Weak Supervision: `bash ./src/weak_supervision_script.sh`
+
+If training with Transfer Learning: `bash ./src/transfer_learning_train_script.sh`
+
+If training with Prompt Engineering: `bash ./src/prompt_engineering_train_script.sh`
+
+### Plotting results
+
+Check [plot_manuscript_figures.ipynb](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/blob/main/src/plot_manuscript_figures.ipynb) for data analysis
