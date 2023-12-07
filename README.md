@@ -27,12 +27,12 @@ For more details, please refer to the paper.
 
 ## 1. Installation<a name="1-installation">
 
-The package is written in Python (version: 3.8). We recommend that the installation is made inside a virtual environment and to do this, one can use either `conda` (recommended in order to control the Python version).
+The package is written in Python (version: 3.8). We recommend that the installation is made inside a virtual environment and to do this, one can use `conda` (recommended in order to control the Python version).
 
 
 ### Using conda
 
-The tool `conda`, which comes bundled with Anaconda has the advantage that it lets us specify the version of Python that we want to use. Python>=3.10 is required.
+The tool `conda`, which comes bundled with Anaconda has the advantage that it lets us specify the version of Python that we want to use. Python=3.8 is required.
 
 After locating in the local github folder, like `cd $PATH$` e.g. `Documents/Local_Github/cheap_learning`, a new environment can be created with
 
@@ -46,7 +46,7 @@ The environment's name will be `cheap_learning`.
 
 ### 2.1 IMDB movie review sentiment<a name="21-imdb-movie-review-sentiment">
 
-First introduced in THIS ARTICLE, the data set contains 50,000 movie reviews from IMDb labelled according to whether they have a positive sentiment or negative sentiment (0: negative sentiment (50%), 1: positive sentiment (50%)) 
+First introduced in ([Maas et al, 2011](https://aclanthology.org/P11-1015/)), the data set contains 50,000 movie reviews from IMDb labelled according to whether they have a positive sentiment or negative sentiment (0: negative sentiment (50%), 1: positive sentiment (50%)) 
 
 The entire data set is located in the subfolder [`data/binary_movie_sentiment`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/data/binary_movie_sentiment). In it, we distinguish between:
 - [The clean data splits](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/data/binary_movie_sentiment/clean_data)
@@ -55,14 +55,14 @@ The entire data set is located in the subfolder [`data/binary_movie_sentiment`](
 
 #### 2.1.1 TMDb data set
 
-Given that we cannot be sure that the IMDb movie review data set is part of the training data set of the GPT-3.5 and GPT-4.0 models, we collected and tested an analogous dataset of movie reviews from TMDb. This data set containg 855 movie reviews published after October 2021 (passed the GPT training date cut) with a ratio of 73.3% of positive reviews and 26.7% of negative reviews.
+Given that we cannot be sure that the IMDb movie reviews data set is part of the training data set of the GPT-3.5 and GPT-4.0 models, we collected and tested an analogous dataset of movie reviews from TMDb. This data set contains 855 movie reviews published after October 2021 (passed the GPT training date cut) with a ratio of 73.3% of positive reviews and 26.7% of negative reviews.
 
 The data set can be found in [`data/tmdb`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/data/tmdb). The scraper script is found in [`src/tmdb-database.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/tmdb-database.py)
 
 
 ### 2.2 Wikipedia Detox
 
-First introduced in THIS ARTICLE, containing 115,864comments from the English language Wikipedia labelled according to whether they contain a personal attack (0: no personal attack (88.3%), 1: contains personal attack (11.7%)). 
+First introduced in ([Wulczyn et al, 2017](https://dl.acm.org/doi/10.1145/3038912.3052591)), the data set contains 115,864 comments from the English language Wikipedia labelled according to whether they contain a personal attack or not (0: no personal attack (88.3%), 1: contains personal attack (11.7%)). 
 
 The entire data set is located in the subfolder [`data/binary_abuse`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/data/binary_abuse). In it, we distinguish between:
 - [The clean data splits](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/data/binary_abuse/clean_data)
@@ -77,24 +77,24 @@ Each one the techniques, with the exception of the the zero-shot Prompt Engineer
 
 To deploy the training with Naive Bayes, please run `bash ./src/naive_bayes_train_script.sh`.
 
-The `bash` script calls the [`src/naive_bayes_classifier.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/naive_bayes_classifier.py) script.
+The `bash` script calls [`src/naive_bayes_classifier.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/naive_bayes_classifier.py).
 
 ### 3.2 Weak Supervision
 
 To deploy the training with Weak Supervision, please run `bash ./src/weak_supervision_script.sh`.
 
-The `bash` script calls the [`src/weak_supervision.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/weak_supervision.py) script and the dictionary of labellling functions, found in [`src/labeling_functions.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/labeling_functions.py).
+The `bash` script calls [`src/weak_supervision.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/weak_supervision.py) and the dictionary of labeling functions, found in [`src/labeling_functions.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/labeling_functions.py).
 
 In particular, for the binary abuse task, Weak Supervision also uses the annotated keywords in [`data/binary_abuse/misc`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/data/binary_abuse/misc).
 
-We train the model defined by the authors of Weak Supervision:
+We train the model defined by the authors of [Weak Supervision](https://ojs.aaai.org/index.php/AAAI/article/view/4403):
 - LabelModel
 
 ### 3.3 Transfer Learning
 
 To deploy the training with Transfer Learning, please run `bash ./src/transfer_learning_train_script.sh`.
 
-The `bash` script calls the [`src/transfer_learning.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/weak_supervision.py) script.
+The `bash` script calls [`src/transfer_learning.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/weak_supervision.py).
 
 We train two models:
 - DistilBERT
@@ -104,14 +104,14 @@ We train two models:
 
 To deploy the training with Prompt Engineering, please run `bash ./src/prompt_engineering_train_script.sh`.
 
-The `bash` script calls the [`src/prompt_engineering.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/prompt_engineering.py) script.
+The `bash` script calls [`src/prompt_engineering.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/prompt_engineering.py).
 
 We use three different prompts:
 - "Is this text negative?"
 - "Does this text contain negative sentiment?"
 - "It was? Negative or not negative?"
 
-We train three models:
+We train two models:
 - DistilBERT
 - GPT-2.0
 
