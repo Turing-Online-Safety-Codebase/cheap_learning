@@ -2,24 +2,24 @@
 
 This repository follows the research presented in the article "NAME OF THE ARTICLE".
 
-In it, we test different NLP techniques and models to classify text in a context of scarce data. We train and test a Naive Bayes model, a Weak Supervision technique, a Prompt Engineering and a Transfer Learning techniques. 
+We test different NLP techniques and models to classify text in a context of scarce data. We train and test a Naive Bayes model, a Weak Supervision technique, a Prompt Engineering and a Transfer Learning techniques.
 
 For each one of these techniques, we train and test on two different datasets: the [IMDb movie reviews](https://huggingface.co/datasets/imdb) and the [Wikipedia Detox](https://github.com/ewulczyn/wiki-detox).
 
 For more details, please refer to the paper. 
 
-### Index
+## Index
 1. [Installation](#1-installation)
 2. [Training and testing data sets](#2-data-sets)
     1. [IMDb movie review sentiment](#21-imdb-movie-review-sentiment)
     3. [TMDb movie review sentiment](#211-tmdb-data-set) 
     2. [Wiki Personal Attacks](#22-wikipedia-detox)
 3. [Techniques](#3-techniques)
-    1. Weak Supervision 
-    2. Transfer Learning
-    3. Prompt engineering
-    4. Naive Bayes
-    5. Zero-shot GPT
+    1. [Naive Bayes](#31-naive-bayes)
+    2. [Weak Supervision](#32-weak-supervision) 
+    3. [Transfer Learning](#33-transfer-learning)
+    4. [Prompt engineering](#34-prompt-engineering)
+    5. [Zero-shot GPT](#35-zero-shot-classifier-using-gpt)
 4. [Results](#4-results)
 5. [Analysis](#5-analysis)
 6. [Contact](#6-contact)
@@ -27,7 +27,7 @@ For more details, please refer to the paper.
 
 ## 1. Installation<a name="1-installation">
 
-The package is written in Python (minimal version: 3.10). We recommend that the installation is made inside a virtual environment and to do this, one can use either `conda` (recommended in order to control the Python version).
+The package is written in Python (version: 3.8). We recommend that the installation is made inside a virtual environment and to do this, one can use either `conda` (recommended in order to control the Python version).
 
 
 ### Using conda
@@ -57,7 +57,7 @@ The entire data set is located in the subfolder [`data/binary_movie_sentiment`](
 
 Given that we cannot be sure that the IMDb movie review data set is part of the training data set of the GPT-3.5 and GPT-4.0 models, we collected and tested an analogous dataset of movie reviews from TMDb. This data set containg 855 movie reviews published after October 2021 (passed the GPT training date cut) with a ratio of 73.3% of positive reviews and 26.7% of negative reviews.
 
-The data set can be found in [`data/tbdb`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/data/tmdb)
+The data set can be found in [`data/tmdb`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/data/tmdb). The scraper script is found in [`src/tmdb-database.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/tmdb-database.py)
 
 
 ### 2.2 Wikipedia Detox
@@ -71,17 +71,70 @@ The entire data set is located in the subfolder [`data/binary_abuse`](https://gi
 
 ## 3. Techniques
 
+Each one the techniques, with the exception of the the zero-shot Prompt Engineering classification using GPT-3.0, 3.5, 4.0 have a `bash` script that deploys the training of each technique.
+
+### 3.1 Naive Bayes
+
+To deploy the training with Naive Bayes, please run `bash ./src/naive_bayes_train_script.sh`.
+
+The `bash` script calls the [`src/naive_bayes_classifier.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/naive_bayes_classifier.py) script.
+
+### 3.2 Weak Supervision
+
+To deploy the training with Weak Supervision, please run `bash ./src/weak_supervision_script.sh`.
+
+The `bash` script calls the [`src/weak_supervision.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/weak_supervision.py) script and the dictionary of labellling functions, found in [`src/labeling_functions.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/labeling_functions.py).
+
+In particular, for the binary abuse task, Weak Supervision also uses the annotated keywords in [`data/binary_abuse/misc`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/data/binary_abuse/misc).
+
+We train the model defined by the authors of Weak Supervision:
+- LabelModel
+
+### 3.3 Transfer Learning
+
+To deploy the training with Transfer Learning, please run `bash ./src/transfer_learning_train_script.sh`.
+
+The `bash` script calls the [`src/transfer_learning.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/weak_supervision.py) script.
+
+We train two models:
+- DistilBERT
+- DeBERTa-v3
+
+### 3.4 Prompt Engineering
+
+To deploy the training with Prompt Engineering, please run `bash ./src/prompt_engineering_train_script.sh`.
+
+The `bash` script calls the [`src/prompt_engineering.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/prompt_engineering.py) script.
+
+We use three different prompts:
+- "Is this text negative?"
+- "Does this text contain negative sentiment?"
+- "It was? Negative or not negative?"
+
+We train three models:
+- DistilBERT
+- GPT-2.0
+
+### 3.5 Zero-shot classifier using GPT
+
+We also perform a zero-shot classification exercise (no training) with the out-of-the-box OpenAI LLMs, GPT-3.0, 3.5 and 4.0.
+
+The script of the zero-shot exercise can be found in the `jupyter notebook` [`open_ai_prompt_engineering.ipynb`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/openai_prompt_engineering.ipynb).
+
+We use three different prompts:
+- "Using one word, classify the sentiment of the movie review using 'Positive' or 'Negative'."
+- "Using one word, does the movie review contain negative sentiment, Yes or No?"
+- "You are a researcher who needs to classify movie reviews as containing negative sentiment or not containing negative sentiment. Using one word, does the movie review contain negative sentiment, Yes or No?"
+
 ## 4. Results
 
 A collection of `csv` files with all the results can be found in [`results`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/results)
 
 ## 5. Analysis
 
-Analysis is done via the `jupyter notebooks [results_analysis.ipynb](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/results_analysis.ipynb)`
+Analysis is done via the `jupyter notebooks` [results_analysis.ipynb](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/results_analysis.ipynb)` and [plot_manuscript_figures.ipynb](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/blob/main/src/plot_manuscript_figures.ipynb)
 
 ## 6. Contact
-
-Contact us!
 
 In alphabetical order:
 - Jonathan Bright - jbright@turing.ac.uk
@@ -90,44 +143,3 @@ In alphabetical order:
 - Pica Johansson - 
 - Hannah R. Kirk - 
 - Angus R. Williams - awilliams@turing.ac.uk
-
-```
-.
-├── src
-│   ├── dataset sampling script
-│   ├── generic preprocessing script
-│   ├── generic evaluation script
-│   ├── transfer learning script
-│   ├── weak supervision script
-│   └── prompt engineering script     
-├── data                   
-│   ├── samples/
-│   │   └── csv per X size sample?
-│   ├── results (all contents on gitignore)
-│   │   └── results/predictions per experiment
-├── environment.yaml
-├── .gitignore
-└── README.md
-
-```
-
-### Creating Environment
-
-Step 1: Locate local github folder `cd $PATH$` e.g. `Documents/Local_Github/cheap_learning`
-
-Step 2: Create conda environment `conda env create -f environment.yaml`
-
-
-### Training data with a certain technique 
-
-If training with Naive Bayes: `bash ./src/naive_bayes_train_script.sh`
-
-If training with Weak Supervision: `bash ./src/weak_supervision_script.sh`
-
-If training with Transfer Learning: `bash ./src/transfer_learning_train_script.sh`
-
-If training with Prompt Engineering: `bash ./src/prompt_engineering_train_script.sh`
-
-### Plotting results
-
-Check [plot_manuscript_figures.ipynb](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/blob/main/src/plot_manuscript_figures.ipynb) for data analysis
