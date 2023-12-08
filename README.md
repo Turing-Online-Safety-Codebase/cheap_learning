@@ -106,10 +106,17 @@ To deploy the training with Prompt Engineering, please run `bash ./src/prompt_en
 
 The `bash` script calls [`src/prompt_engineering.py`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/prompt_engineering.py).
 
-We use three different prompts:
+We use three different prompts for each of the two datasets:
+    
+For IMDB movie review sentiment:
 - "Is this text negative?"
 - "Does this text contain negative sentiment?"
 - "It was? Negative or not negative?"
+
+For Wikipedia Detox:
+- "Is this text abusive?",
+- "Does this text contain abuse?"
+- "It was? Abusive or Not Abusive"
 
 We train two models:
 - DistilBERT
@@ -121,10 +128,17 @@ We also perform a zero-shot classification exercise (no training) with the out-o
 
 The script of the zero-shot exercise can be found in the `jupyter notebook` [`open_ai_prompt_engineering.ipynb`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/src/openai_prompt_engineering.ipynb).
 
-We use three different prompts:
+We use three different prompts for each of the two datasets:
+
+For IMDB movie review sentiment:
 - "Using one word, classify the sentiment of the movie review using 'Positive' or 'Negative'."
 - "Using one word, does the movie review contain negative sentiment, Yes or No?"
 - "You are a researcher who needs to classify movie reviews as containing negative sentiment or not containing negative sentiment. Using one word, does the movie review contain negative sentiment, Yes or No?"
+
+For Wikipedia Detox:
+- "Using one word, does the internet comment contain toxic language, Yes or No?"
+- "Using one word, is this internet comment using toxic language, Yes or No?"
+- "You are a researcher who needs to classify comments on the internet as containing abusive language or not containing abusive language. Using one word, does the internet comment contain abusive language, Yes or No?"
 
 ## 4. Results
 
@@ -140,6 +154,7 @@ In alphabetical order:
 - Jonathan Bright - jbright@turing.ac.uk
 - Leonardo Castro-Gonzalez - lmcastrogonzalez@turing.ac.uk
 - Yi-Ling Chung - ychung@turing.ac.uk
+- John Francis - jfrancis@turing.ac.uk
 - Pica Johansson - 
 - Hannah R. Kirk - 
 - Angus R. Williams - awilliams@turing.ac.uk
