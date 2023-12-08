@@ -142,7 +142,7 @@ For Wikipedia Detox:
 
 ## 4. Results
 
-A collection of `csv` files with all the results can be found in [`results`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/results)
+A collection of `csv` files with all the results can be found in [`results`](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/tree/main/results). The full results are stored in [task_results_final.csv](https://github.com/Turing-Online-Safety-Codebase/cheap_learning/blob/main/results/task_results_final.csv).
 
 ## 5. Analysis
 
