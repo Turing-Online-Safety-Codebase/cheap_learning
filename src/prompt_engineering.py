@@ -25,7 +25,7 @@ from load_lm import load_plm
 logger = logging.getLogger(__name__)
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Prompt learning")
+    parser = argparse.ArgumentParser(description="Prompt engineering")
     parser.add_argument('--task', type=str, default='binary_abuse', help = 'name of task')
     parser.add_argument('--prompt', type=str, default='{"placeholder":"text_a"} It was? {"mask"}', help = 'prompt')
     parser.add_argument('--prompt_id', type=str, default='Prompt1', help = 'prompt id indicating the folder to store results')
@@ -101,16 +101,14 @@ def main(data_dir, n_train, n_eval, eval_set, template, seed, output_dir, model_
 
     def inference(model, dataset):
         model.eval()
-        preds = [] #numpy.array([])
-        gold_labels = [] #numpy.array([])
+        preds = []
+        gold_labels = []
         with torch.no_grad():
             for step, inputs in enumerate(dataset):
                 if use_cuda:
                     inputs = inputs.cuda()
                 logits = model(inputs)
                 labels = inputs['label']
-                # gold_labels = numpy.concatenate((gold_labels, labels.cpu()), axis=0)
-                # preds = numpy.concatenate((preds, torch.argmax(logits, dim=-1).cpu()), axis=0)
                 gold_labels.extend(labels.cpu().tolist()) 
                 preds.extend(torch.argmax(logits, dim=-1).cpu().tolist())
 
@@ -210,11 +208,6 @@ if __name__ == '__main__':
     main_dir = os.getcwd()
     data_dir = f"data"
     output_dir = f'results/{TASK}/{TECH}/{PROMPT_ID}'
-
-    # prompt_list = ['{"placeholder":"text_a"} Is this text abusive? {"mask"}', 
-    #              '{"placeholder":"text_a"} Does this text contain abuse? {"mask"}',
-    #              '{"placeholder":"text_a"} It was? {"mask"}',
-    #              ]
 
     # Run for multiple training batch sizes and multiple seeds
     for SEED in [1, 2, 3]:
