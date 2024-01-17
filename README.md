@@ -1,6 +1,6 @@
 # Cheap Learning
 
-This repository follows the research presented in the article "NAME OF THE ARTICLE".
+This repository follows the research presented in the article "Cheap Learning: Maximising Performance of Language Models for Social Data Science Using Minimal Data".
 
 We test different NLP techniques and models to classify text in a context of scarce data. We train and test a Naive Bayes model, a Weak Supervision technique, a Prompt Engineering and a Transfer Learning techniques.
 
@@ -150,11 +150,4 @@ Analysis is done via the `jupyter notebooks` [results_analysis.ipynb](https://gi
 
 ## 6. Contact
 
-In alphabetical order:
-- Jonathan Bright - jbright@turing.ac.uk
-- Leonardo Castro-Gonzalez - lmcastrogonzalez@turing.ac.uk
-- Yi-Ling Chung - ychung@turing.ac.uk
-- John Francis - jfrancis@turing.ac.uk
-- Pica Johansson - 
-- Hannah R. Kirk - 
-- Angus R. Williams - awilliams@turing.ac.uk
+For any questions, please contact Jonathan Bright - jbright@turing.ac.uk
