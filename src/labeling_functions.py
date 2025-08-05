@@ -95,7 +95,7 @@ def lfg_regex(regex,
 ### Annotators labeling functions ###
 
 def worker_lf(x, worker_dict):
-    return worker_dict.get(x.rev_id, ABSTAIN)
+    return worker_dict.get(x.id, ABSTAIN)
 
 def lfg_worker(worker_id, worker_dicts):
     worker_dict = worker_dicts[worker_id]
@@ -126,8 +126,8 @@ def get_worker_dicts(annotations: pd.DataFrame) -> dict:
 def get_lfs(path_keywords: str, path_annotations: str) -> dict:
     lfs = dict()
 
-    lfs['polarity_negative'] = lfg_polarity(-0.25, '<', ABUSE, name='polarity_negative')
-    lfs['polarity_positive'] = lfg_polarity(0.1, '>=', NOT_ABUSE, name='polarity_positive')
+    lfs['polarity_negative'] = lfg_polarity( '<',-0.25, ABUSE, name='polarity_negative')
+    lfs['polarity_positive'] = lfg_polarity('>=',0.1,  NOT_ABUSE, name='polarity_positive')
 
     lfs['length_text'] = lfg_lengthtext(9500, ">", ABUSE)
 
