@@ -21,8 +21,10 @@ logger = logging.getLogger(__name__)
 def parse_args():
     parser = argparse.ArgumentParser(description="Transfer learning")
     parser.add_argument('--n_train', type=int, default=16, help='num of training entries')
-    parser.add_argument('--balanced_train', type=bool, action=argparse.BooleanOptionalAction, help='if training entries are balanced by class label')
-    parser.add_argument('--balanced_eval', type=bool, action=argparse.BooleanOptionalAction, help='if testing entries are balanced by class label')
+    #parser.add_argument('--balanced_train', type=bool, action=argparse.BooleanOptionalAction, help='if training entries are balanced by class label')
+    #parser.add_argument('--balanced_eval', type=bool, action=argparse.BooleanOptionalAction, help='if testing entries are balanced by class label')
+    parser.add_argument('--balanced_train', action='store_true', help='if training entries are balanced by class label')
+    parser.add_argument('--balanced_eval', action='store_true', help='if training entries are balanced by class label')
     parser.add_argument('--eval_set', type=str, default="dev_sample", help='name of eval set')
     parser.add_argument('--n_eval', type=int, default=-1, help='num of eval entries. Set to -1 to take all entries.')
     parser.add_argument('--model_name', type=str, default='bert', help='name of the model')
@@ -65,7 +67,8 @@ def get_runtime(train_output):
     return metrics['train_runtime']
 
 def main(SEED, TASK, TECH, data_dir, output_dir, n_train, balanced_train, eval_set, n_eval, model_name, balanced_eval):
-    datetime_str = str(datetime.now())
+    #datetime_str = str(datetime.datetime.now()) # created bad file names on windows
+    datetime_str = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     # Setup logging
     logger.setLevel(logging.DEBUG)

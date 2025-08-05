@@ -9,6 +9,7 @@ import os
 import random
 import pandas as pd
 from sklearn.utils import shuffle
+from typing import Optional
 
 
 def reduce_path(path, target_dir):
@@ -37,7 +38,7 @@ def check_dir_exists(path):
         print(f"Folder exists: {path}")
 
 
-def load_n_samples(data_dir, task, split, n_entries, seed: int | None = None):
+def load_n_samples(data_dir, task, split, n_entries, seed: Optional[int] = None):
     """Loads first n entries of dataset split.
 
     Args:

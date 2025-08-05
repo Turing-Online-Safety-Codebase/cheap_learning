@@ -39,7 +39,8 @@ def parse_args():
     return pars_args
 
 def main(data_dir, n_train, n_eval, eval_set, seed, output_dir, model_name, balanced_train, balanced_eval):
-    datetime_str = str(datetime.datetime.now())
+    #datetime_str = str(datetime.datetime.now()) # created bad file names on windows
+    datetime_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     # Setup logging
     logger.setLevel(logging.DEBUG)

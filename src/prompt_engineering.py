@@ -34,7 +34,7 @@ def parse_args():
     parser.add_argument('--eval_set', type=str, default="dev_sample", help='name of eval set')
     parser.add_argument('--model_name', type=str, default='bert', help='name of the model')
     parser.add_argument('--model_path', type=str, default='bert-base-cased', help='path to the model')
-    parser.add_argument('--use_cuda', action='store_false', help='If using cuda. Default to True')
+    parser.add_argument('--use_cuda', action='store_true', help='If using cuda. Default to False')
     parser.add_argument('--balanced_train', action='store_true', help='If training entries are balanced by class label. Default to False.')
     parser.add_argument('--balanced_eval', action='store_true', help='If test entries are balanced by class label. Default to False.')
     parser.add_argument('--eval_batch_size', type=int, default=128, help='num of examples evaluated at once')
@@ -46,7 +46,8 @@ def parse_args():
     return pars_args
 
 def main(data_dir, n_train, n_eval, eval_set, template, seed, output_dir, model_name, model_path, balanced_train, use_cuda, eval_batch_size, balanced_eval):
-    datetime_str = str(datetime.datetime.now())
+    #datetime_str = str(datetime.datetime.now())
+    datetime_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     set_seed(seed)
 

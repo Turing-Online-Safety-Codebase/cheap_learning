@@ -12,12 +12,18 @@ dependencies:
   - torchvision=0.14.0
 
   - pip:
-    - transformers[sentencepiece]
+    - transformers[sentencepiece]==4.20.0
     - datasets
     - openprompt
     - pygithub
     - pylint
     - emoji==2.2.0
+    - snorkel
+    - textblob
+    - protobuf==3.20.3
+    - accelerate>=0.26.0
+    - openai
+    - tiktoken
     
   # Core python
   - numpy

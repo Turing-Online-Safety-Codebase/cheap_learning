@@ -105,7 +105,8 @@ def main(
     tie_break_policy: str,
 ):
     ### Time
-    datetime_str = str(dt.datetime.now())
+    #datetime_str = str(datetime.datetime.now()) # created bad file names on windows
+    datetime_str = dt.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     ### Setup logging
     logger.setLevel(logging.DEBUG)
@@ -172,7 +173,8 @@ def main(
     lfs = [item[1] for item in labeling_functions.items()]
 
     applier = PandasLFApplier(lfs=lfs)
-
+    print(dataset["train"].columns)
+    print(dataset["eval"].columns)
     start = dt.datetime.now()
     L_train = applier.apply(df=dataset["train"])
 
